@@ -31,7 +31,7 @@ export default function FramedStrip({ apps, current }: Props) {
   return (
     <nav
       aria-label={t("Screens")}
-      className="mb-4 flex min-w-0 flex-wrap items-center gap-1.5 border-b border-zinc-200 pb-3 text-sm"
+      className="mb-4 flex min-w-0 flex-nowrap items-center gap-1.5 overflow-x-auto whitespace-nowrap border-b border-zinc-200 pb-3 text-sm sm:flex-wrap sm:overflow-visible"
     >
       {areas.length > 1 ? (
         <label className="me-2 flex items-center gap-1.5 text-zinc-500">

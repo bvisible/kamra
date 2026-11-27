@@ -31,7 +31,9 @@ export function FramedBridge() {
       const message = event.data as { type?: unknown; path?: unknown } | null
       if (!message || typeof message !== "object" || message.type !== NAVIGATE_MESSAGE) return
       if (!isAppPath(message.path) || message.path === current) return
-      navigate(message.path)
+      // Replace, not push: the desk wrote this screen in its own history already, and a second entry made the Back button
+      // need two presses for one tab.
+      navigate(message.path, { replace: true })
     }
     window.addEventListener("message", onMessage)
     return () => window.removeEventListener("message", onMessage)

@@ -511,6 +511,18 @@ export default function AppShell() {
   const kiosk = kioskOn || framed
   const canBook = allowed("Reservation", "handle_stays", BOOKING_ROLES)
 
+  //// Neoffice: the desk's « Create » menu opens the booking dialog (a screen of the form `…?new=booking`), the button of the
+  //// top bar that the frame leaves out. The flag is taken off the address at once, so that a reload does not open it again.
+  useEffect(() => {
+    if (!framed || !canBook) return
+    const query = new URLSearchParams(location.search)
+    if (query.get("new") !== "booking") return
+    setBooking({})
+    query.delete("new")
+    const rest = query.toString()
+    navigate({ pathname: location.pathname, search: rest ? `?${rest}` : "" }, { replace: true })
+  }, [framed, canBook, location.pathname, location.search, navigate])
+
   const items = (currentApp?.items ?? []).filter(
     (item) => itemVisible(item, roles, can),
   )
