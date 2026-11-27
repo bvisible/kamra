@@ -1,0 +1,1 @@
+const t=["Confirmed","Checked In","Held","Pending Payment"],c=n=>({sym:(n==null?void 0:n.currency_symbol)??"",code:n==null?void 0:n.currency});function d(n){return{live:c(n.find(e=>t.includes(e.status))??n[0]),held:c(n.find(e=>e.status==="Cancelled")??n[0])}}export{d as t};

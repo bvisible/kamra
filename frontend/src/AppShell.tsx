@@ -47,6 +47,9 @@ import { useOfferedLanguages, useT } from "./lib/i18n"
 import { loadLocale } from "./lib/money"
 import { cn } from "./lib/utils"
 import { useKiosk } from "./lib/kiosk"
+import { FramedBridge } from "./components/FramedBridge" //// Neoffice: framed in a tab of the desk
+import { isFramed } from "./lib/framed" //// Neoffice
+import FramedStrip from "./components/FramedStrip" //// Neoffice
 import { getSiteInfo, versionLabel } from "./lib/siteInfo"
 import AlertSettings from "./components/AlertSettings"
 import NotificationHost from "./components/NotificationHost"
@@ -501,7 +504,11 @@ export default function AppShell() {
     }
   }, [currentApp])
   const floor = location.pathname === "/pos" || location.pathname === "/kitchen"
-  const { on: kiosk } = useKiosk()
+  const { on: kioskOn } = useKiosk()
+  //// Neoffice: framed in a tab of the desk, the application leaves out its own menu, top bar, search and nags (the desk
+  //// draws them around the frame): the same chrome the focus mode of the till leaves out. See lib/framed.ts.
+  const framed = isFramed()
+  const kiosk = kioskOn || framed
   const canBook = allowed("Reservation", "handle_stays", BOOKING_ROLES)
 
   const items = (currentApp?.items ?? []).filter(
@@ -652,6 +659,7 @@ export default function AppShell() {
     // content scrolls; everything else keeps normal page flow.
     <div className={cn("flex min-h-screen flex-col", floor && "lg:h-screen")}>
       <NotificationHost />
+      {framed && <FramedBridge />}{/* //// Neoffice: tells the desk the screen (lib/framed.ts) */}
       {demoMode && !kiosk && (
         <div className="bg-amber-500 px-4 py-1.5 text-center text-xs font-medium text-amber-950">
           {t("Shared playground, not your hotel. Data is wiped every night.")}
@@ -777,6 +785,7 @@ export default function AppShell() {
               : "w-full max-w-none px-4 py-6 lg:px-6"
           }
         >
+          {framed && <FramedStrip apps={apps} current={currentApp ?? apps[0]} />}{/* //// Neoffice: the menu, in one row */}
           <ErrorBoundary>
           <Outlet
             context={

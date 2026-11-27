@@ -1,3 +1,5 @@
+import { isFramed, readDeskTheme } from "./framed" //// Neoffice: see initTheme
+
 export type Theme = "light" | "dark" | "system"
 
 const KEY = "kamra-theme"
@@ -26,6 +28,22 @@ export function setTheme(t: Theme) {
 /** Call once at boot: applies the stored theme and follows OS changes
  * while in "system" mode. */
 export function initTheme() {
+  //// Neoffice: the application framed in a tab of the desk wears the desk's theme, read from its <html data-theme> and
+  //// followed live, and writes none of its own keys (the storage is shared with the application's own pages: a choice
+  //// made around the frame would otherwise switch them too). See lib/framed.ts.
+  if (isFramed()) {
+    const follow = () => document.documentElement.classList.toggle("dark", readDeskTheme() === "dark")
+    follow()
+    try {
+      new MutationObserver(follow).observe(window.parent.document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-theme"],
+      })
+    } catch {
+      // The desk above refuses to be looked at: the theme stays what it was drawn as.
+    }
+    return
+  }
   applyTheme(getTheme())
   window
     .matchMedia("(prefers-color-scheme: dark)")

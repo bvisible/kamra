@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom"
 import "./index.css"
 import App from "./App"
 import { initTheme } from "./lib/theme"
+import { isFramed } from "./lib/framed" //// Neoffice
 import { initLang } from "./lib/dir"
 import { asset } from "./lib/asset"
 import { AuthProvider } from "./lib/auth"
@@ -11,6 +12,8 @@ import { CashierAuthProvider } from "./lib/cashierAuth"
 import { ROUTER_BASENAME } from "./lib/routing"
 
 initTheme()
+//// Neoffice: a frame of the desk wears the desk's canvas (index.css)
+if (isFramed()) document.documentElement.classList.add("kamra-framed")
 
 // Favicons, base-aware (see index.html note).
 function setIcon(rel: string, href: string, type?: string) {

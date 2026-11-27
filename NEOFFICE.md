@@ -24,9 +24,16 @@ Every change carries a `//// Neoffice` comment with its reason: `grep -rn "////"
 - **Remove it all when Neoffice runs Frappe 16**: delete `kamra/compat_v15.py`, `kamra/tests/test_compat_v15.py` and
   the marked lines.
 
+- **Framed in the Neoffice desk** (`?embed=1`): the application leaves out its own menu, top bar, search and nags, draws a one-row
+  menu of the area it is in (`components/FramedStrip.tsx`), talks to the desk (`kamra:route` from the frame, `kamra:navigate`
+  to it: `components/FramedBridge.tsx`) and wears the desk's theme (`lib/theme.ts`). Files: `frontend/src/lib/framed.ts`,
+  `components/FramedBridge.tsx`, `components/FramedStrip.tsx`, and marked lines in `AppShell.tsx`, `main.tsx`, `index.css`.
+- **The built SPA is committed** (`kamra/public/frontend`, as upstream does): after any change to `frontend/` or a merge,
+  rebuild it (`cd frontend && npm ci && npm run build`) and commit the result; never rebuild it on an instance.
+
 ## Merging upstream
 
-`git fetch upstream` and merge a release tag. After each merge run `kamra/tests/test_compat_v15.py`: two tests fail on
+`git fetch upstream` and merge a release tag; a conflict in `kamra/public/frontend` is settled by rebuilding it. After each merge run `kamra/tests/test_compat_v15.py`: two tests fail on
 purpose when the merge adds a cache read without `expires=True` or a field named `*_seen` on a doctype that does not
 track seen. A new `new_doc` with a Time field is covered by the empty-Time test.
 

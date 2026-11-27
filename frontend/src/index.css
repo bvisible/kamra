@@ -211,3 +211,10 @@ select:disabled {
     padding: 0 !important;
   }
 }
+
+/* //// Neoffice: framed in a tab of the desk (lib/framed.ts), the page is transparent so that the desk's canvas shows
+   through; the desk draws the menu and the bar around it. */
+html.kamra-framed,
+html.kamra-framed body {
+  background: transparent !important;
+}
