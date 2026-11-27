@@ -139,7 +139,8 @@ function IdentityCard({ d, reload }: { d: Detail; reload: () => void }) {
       }
     >
       <dl className="mb-3 grid grid-cols-2 gap-3">
-        <Field label={translate("Pre-check-in")} value={d.precheckin_status} />
+        {/* //// Neoffice — the status the server keeps in English (« Not Started ») is shown translated */}
+        <Field label={translate("Pre-check-in")} value={d.precheckin_status ? translate(d.precheckin_status) : d.precheckin_status} />
         <Field label={translate("ID captured by")} value={d.id_document_source} />
       </dl>
 
@@ -500,7 +501,8 @@ export default function ReservationDetail({
               />
             )}
             {d.precheckin_status && d.precheckin_status !== "Not Started" && (
-              <Field label={translate("Pre-check-in")} value={d.precheckin_status} />
+              //// Neoffice — the status the server keeps in English is shown translated
+              <Field label={translate("Pre-check-in")} value={translate(d.precheckin_status)} />
             )}
           </dl>
           <StayRates reservation={name} onSaved={() => { refresh(); reload() }} />
@@ -579,11 +581,12 @@ export default function ReservationDetail({
               <Field
                 label={translate("History")}
                 value={
+                  //// Neoffice — « last » and « First stay » went untranslated: both are keys of the catalogue
                   d.guest.stays > 0
                     ? `${tn(d.guest.stays, "{n} stay", "{n} stays")}${
-                        d.guest.last_stay ? ` · last ${d.guest.last_stay}` : ""
+                        d.guest.last_stay ? ` · ${translate("last {date}", { date: d.guest.last_stay })}` : ""
                       }`
-                    : "First stay"
+                    : translate("First stay") //// Neoffice — through t(), as « last {date} » above
                 }
               />
             </dl>

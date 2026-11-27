@@ -30,6 +30,37 @@ const FIRST_FIELD =
 const stack: number[] = []
 let seq = 0
 
+// What the desk's navigation asks of each drawer open (leaveOpenDrawers, FramedBridge).
+type OpenDrawer = { dirty: () => boolean; close: () => void; ask: (answer: (leave: boolean) => void) => void }
+const registry = new Map<number, OpenDrawer>()
+
+/**
+ * The desk moves the frame to another screen (a tab clicked): the drawers open give way. Nothing typed in them: they
+ * close, and the answer is yes. Typed work: the drawer that holds it (the clean ones above it closed) asks the question of
+ * the protected exit; « Abandonner » closes them all (yes), « Retour » keeps everything (no: the screen stays).
+ */
+export function leaveOpenDrawers(): Promise<boolean> {
+  const open = stack.map((id) => registry.get(id)).filter((d): d is OpenDrawer => !!d)
+  if (!open.length) return Promise.resolve(true)
+  const closeDown = (from: number, to: number) => {
+    for (let i = from; i >= to; i--) open[i].close()
+  }
+  let at = -1
+  for (let i = open.length - 1; i >= 0 && at < 0; i--) if (open[i].dirty()) at = i
+  if (at < 0) {
+    closeDown(open.length - 1, 0)
+    return Promise.resolve(true)
+  }
+  closeDown(open.length - 1, at + 1)
+  return new Promise((resolve) =>
+    open[at].ask((leave) => {
+      // « Abandonner » closed the drawer that asked; the ones under it follow.
+      if (leave) closeDown(at - 1, 0)
+      resolve(leave)
+    }),
+  )
+}
+
 function visible(el: Element): boolean {
   const r = (el as HTMLElement).getBoundingClientRect()
   return r.width > 0 && r.height > 0
@@ -132,10 +163,20 @@ export function useFramedDrawer(opts: { onClose: () => void }) {
     if (framed && dirty()) setAsking(true)
     else closeRef.current()
   }, [framed, dirty])
-  const keep = useCallback(() => setAsking(false), [])
+  // The desk's navigation waits for the answer to its question (leaveOpenDrawers).
+  const answer = useRef<((leave: boolean) => void) | null>(null)
+  const keep = useCallback(() => {
+    setAsking(false)
+    const a = answer.current
+    answer.current = null
+    if (a) a(false)
+  }, [])
   const discard = useCallback(() => {
     setAsking(false)
     closeRef.current()
+    const a = answer.current
+    answer.current = null
+    if (a) a(true)
   }, [])
   const clean = useCallback(() => {
     work.current.first.clear()
@@ -148,6 +189,14 @@ export function useFramedDrawer(opts: { onClose: () => void }) {
     if (!el) return
     const id = ++seq
     stack.push(id)
+    registry.set(id, {
+      dirty,
+      close: () => closeRef.current(),
+      ask: (a) => {
+        answer.current = a
+        setAsking(true)
+      },
+    })
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
     // A field of the work: inside this window, outside what it marks as not work (a search).
     const isWork = (t: Element | null): t is Element =>
@@ -195,7 +244,7 @@ export function useFramedDrawer(opts: { onClose: () => void }) {
       if (stack[stack.length - 1] !== id || e.defaultPrevented) return
       if (e.key === "Escape") {
         e.preventDefault()
-        if (askingRef.current) setAsking(false)
+        if (askingRef.current) keep()
         else attemptClose()
         return
       }
@@ -225,9 +274,14 @@ export function useFramedDrawer(opts: { onClose: () => void }) {
       el.removeEventListener("focusout", onFocusOut, true)
       const at = stack.indexOf(id)
       if (at >= 0) stack.splice(at, 1)
+      registry.delete(id)
+      // Gone while the desk waited for its answer (closed some other way): the desk may go on.
+      const pending = answer.current
+      answer.current = null
+      if (pending) pending(true)
       if (opener && document.contains(opener)) opener.focus({ preventScroll: true })
     }
-  }, [framed, attemptClose, discard, dirty])
+  }, [framed, attemptClose, discard, dirty, keep])
 
   // The keys on the foot, after each render: a busy label (« Enregistrement… ») rewrites the button.
   useLayoutEffect(() => {

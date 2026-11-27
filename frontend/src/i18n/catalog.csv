@@ -3246,6 +3246,7 @@ Includes {amount} for {n} pet,Includes {amount} for {n} pet,يشمل {amount} م
 Includes {amount} for {n} pets,Includes {amount} for {n} pets,يشمل {amount} مقابل {n} حيوانات أليفة,Incluye {amount} por {n} mascotas,Inclui {amount} para {n} animais de estimação,含 {n} 只宠物费用 {amount},screens/PublicBooking.tsx; screens/PublicListing.tsx,amount n,translated
 Includes: ,Includes: ,يشمل: ,Incluye: ,Inclui: ,包含：,screens/BanquetDocument.tsx,,translated
 Indian,Indian,هندي,India,Indiano,印度式,,,translated
+Individual,Individual,فردي,Individual,Individual,散客,screens/configs.ts,,translated
 Individual units,Individual units,وحدات فردية,Unidades individuales,Unidades individuais,独立单元,screens/Setup.tsx,,translated
 info,info,معلومة,información,informações,信息,,,translated
 Info,Info,معلومة,Información,Informações,信息,,,translated

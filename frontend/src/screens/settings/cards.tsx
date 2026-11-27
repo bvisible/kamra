@@ -208,6 +208,7 @@ export const TIMEZONES = [
   "Asia/Singapore",
   "Europe/London",
   "Europe/Paris",
+  "Europe/Zurich", //// Neoffice — the zone of the Swiss hotels Neoffice serves
   "Africa/Cairo",
   "Africa/Nairobi",
   "America/New_York",
