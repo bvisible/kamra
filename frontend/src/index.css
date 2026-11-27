@@ -213,8 +213,483 @@ select:disabled {
 }
 
 /* //// Neoffice: framed in a tab of the desk (lib/framed.ts), the page is transparent so that the desk's canvas shows
-   through; the desk draws the menu and the bar around it. */
+   through; the desk draws the menu and the bar around it (the rule is in the framed block below). */
+
+/* //// Neoffice — framed in a tab of the Neoffice desk, the interface wears the desk's design system (paper, ink, the
+   signal; Karla for the text, Forum for the titles and the big figures), so that a Kamra screen and its windows look like
+   every screen and window around them (Jérémy, 27.11: « toujours le même design partout »). The palette below remaps
+   Tailwind's colours the way .dark does: brand green -> ink for the actions (the signal tints for an active state), the
+   cool greys -> the warm sands, blue / green / amber / rose -> the design system's info / success / warning / danger, the
+   violet -> sand (the desk has five tones). Generated from tokens/colors.css of the design system; dark follows the desk
+   (lib/theme.ts) with the desk's neutral dark windows. Nothing here applies without html.kamra-framed (main.tsx): the
+   standalone application keeps its own look. */
+@font-face {
+  font-family: "Karla";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/assets/neoffice_theme/fonts/webfonts/Karla-VariableFont_wght.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Forum";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/assets/neoffice_theme/fonts/webfonts/Forum-Regular.woff2") format("woff2");
+}
+html.kamra-framed {
+  --font-sans: "Karla", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    "Noto Sans", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --kf-font-title: "Forum", Georgia, "Times New Roman", serif;
+  --color-white: #ffffff;
+  --color-zinc-50: #f6f3ed; --color-zinc-100: #ece7de; --color-zinc-200: #dcd4c7; --color-zinc-300: #bfb5a4; --color-zinc-400: #968c7c; --color-zinc-500: #6f665a; --color-zinc-600: #524b41; --color-zinc-700: #3a342c; --color-zinc-800: #232020; --color-zinc-900: #1a1817; --color-zinc-950: #141414;
+  --color-slate-50: #f6f3ed; --color-slate-100: #ece7de; --color-slate-200: #dcd4c7; --color-slate-300: #bfb5a4; --color-slate-400: #968c7c; --color-slate-500: #6f665a; --color-slate-600: #524b41; --color-slate-700: #3a342c; --color-slate-800: #232020; --color-slate-900: #1a1817; --color-slate-950: #141414;
+  --color-gray-50: #f6f3ed; --color-gray-100: #ece7de; --color-gray-200: #dcd4c7; --color-gray-300: #bfb5a4; --color-gray-400: #968c7c; --color-gray-500: #6f665a; --color-gray-600: #524b41; --color-gray-700: #3a342c; --color-gray-800: #232020; --color-gray-900: #1a1817; --color-gray-950: #141414;
+  --color-neutral-50: #f6f3ed; --color-neutral-100: #ece7de; --color-neutral-200: #dcd4c7; --color-neutral-300: #bfb5a4; --color-neutral-400: #968c7c; --color-neutral-500: #6f665a; --color-neutral-600: #524b41; --color-neutral-700: #3a342c; --color-neutral-800: #232020; --color-neutral-900: #1a1817; --color-neutral-950: #141414;
+  --color-stone-50: #f6f3ed; --color-stone-100: #ece7de; --color-stone-200: #dcd4c7; --color-stone-300: #bfb5a4; --color-stone-400: #968c7c; --color-stone-500: #6f665a; --color-stone-600: #524b41; --color-stone-700: #3a342c; --color-stone-800: #232020; --color-stone-900: #1a1817; --color-stone-950: #141414;
+  --color-violet-50: #f6f3ed; --color-violet-100: #ece7de; --color-violet-200: #dcd4c7; --color-violet-300: #bfb5a4; --color-violet-400: #968c7c; --color-violet-500: #6f665a; --color-violet-600: #524b41; --color-violet-700: #3a342c; --color-violet-800: #232020; --color-violet-900: #1a1817; --color-violet-950: #141414;
+  --color-purple-50: #f6f3ed; --color-purple-100: #ece7de; --color-purple-200: #dcd4c7; --color-purple-300: #bfb5a4; --color-purple-400: #968c7c; --color-purple-500: #6f665a; --color-purple-600: #524b41; --color-purple-700: #3a342c; --color-purple-800: #232020; --color-purple-900: #1a1817; --color-purple-950: #141414;
+  --color-brand-50: #ffeae2; --color-brand-100: #ffd1c1; --color-brand-200: #ffb599; --color-brand-300: #ff8d64; --color-brand-400: #f55d1a; --color-brand-500: #f55d1a; --color-brand-600: #141414; --color-brand-700: #232020; --color-brand-800: #1a1817; --color-brand-900: #141414; --color-brand-950: #141414;
+  --color-emerald-50: #e9f7ee; --color-emerald-100: #cbedd7; --color-emerald-200: #a0d9b7; --color-emerald-300: #75c597; --color-emerald-400: #4ab177; --color-emerald-500: #1f9d57; --color-emerald-600: #178347; --color-emerald-700: #11663a; --color-emerald-800: #0d502d; --color-emerald-900: #0a3d23; --color-emerald-950: #072917;
+  --color-green-50: #e9f7ee; --color-green-100: #cbedd7; --color-green-200: #a0d9b7; --color-green-300: #75c597; --color-green-400: #4ab177; --color-green-500: #1f9d57; --color-green-600: #178347; --color-green-700: #11663a; --color-green-800: #0d502d; --color-green-900: #0a3d23; --color-green-950: #072917;
+  --color-teal-50: #e9f7ee; --color-teal-100: #cbedd7; --color-teal-200: #a0d9b7; --color-teal-300: #75c597; --color-teal-400: #4ab177; --color-teal-500: #1f9d57; --color-teal-600: #178347; --color-teal-700: #11663a; --color-teal-800: #0d502d; --color-teal-900: #0a3d23; --color-teal-950: #072917;
+  --color-rose-50: #fbebe7; --color-rose-100: #f6d2c9; --color-rose-200: #f0b0a6; --color-rose-300: #e98e83; --color-rose-400: #e26c60; --color-rose-500: #dc4a3d; --color-rose-600: #c1372c; --color-rose-700: #9c2920; --color-rose-800: #7a2019; --color-rose-900: #5e1913; --color-rose-950: #3e100d;
+  --color-red-50: #fbebe7; --color-red-100: #f6d2c9; --color-red-200: #f0b0a6; --color-red-300: #e98e83; --color-red-400: #e26c60; --color-red-500: #dc4a3d; --color-red-600: #c1372c; --color-red-700: #9c2920; --color-red-800: #7a2019; --color-red-900: #5e1913; --color-red-950: #3e100d;
+  --color-pink-50: #fbebe7; --color-pink-100: #f6d2c9; --color-pink-200: #f0b0a6; --color-pink-300: #e98e83; --color-pink-400: #e26c60; --color-pink-500: #dc4a3d; --color-pink-600: #c1372c; --color-pink-700: #9c2920; --color-pink-800: #7a2019; --color-pink-900: #5e1913; --color-pink-950: #3e100d;
+  --color-amber-50: #fcf2dd; --color-amber-100: #f8e2b4; --color-amber-200: #f2d08b; --color-amber-300: #ecbd62; --color-amber-400: #e6aa38; --color-amber-500: #e0980f; --color-amber-600: #bc7d0b; --color-amber-700: #92610c; --color-amber-800: #724c09; --color-amber-900: #583a07; --color-amber-950: #3a2705;
+  --color-yellow-50: #fcf2dd; --color-yellow-100: #f8e2b4; --color-yellow-200: #f2d08b; --color-yellow-300: #ecbd62; --color-yellow-400: #e6aa38; --color-yellow-500: #e0980f; --color-yellow-600: #bc7d0b; --color-yellow-700: #92610c; --color-yellow-800: #724c09; --color-yellow-900: #583a07; --color-yellow-950: #3a2705;
+  --color-orange-50: #ffeae2; --color-orange-100: #ffd1c1; --color-orange-200: #ffb599; --color-orange-300: #ff8d64; --color-orange-400: #f55d1a; --color-orange-500: #d54600; --color-orange-600: #aa3700; --color-orange-700: #81300f; --color-orange-800: #65250c; --color-orange-900: #4d1d09; --color-orange-950: #341306;
+  --color-sky-50: #eef2f6; --color-sky-100: #dce4ec; --color-sky-200: #b8c6d5; --color-sky-300: #93a8be; --color-sky-400: #6e89a6; --color-sky-500: #4a6b8f; --color-sky-600: #3a5572; --color-sky-700: #2c4156; --color-sky-800: #223343; --color-sky-900: #1a2734; --color-sky-950: #121a22;
+  --color-blue-50: #eef2f6; --color-blue-100: #dce4ec; --color-blue-200: #b8c6d5; --color-blue-300: #93a8be; --color-blue-400: #6e89a6; --color-blue-500: #4a6b8f; --color-blue-600: #3a5572; --color-blue-700: #2c4156; --color-blue-800: #223343; --color-blue-900: #1a2734; --color-blue-950: #121a22;
+  --color-indigo-50: #eef2f6; --color-indigo-100: #dce4ec; --color-indigo-200: #b8c6d5; --color-indigo-300: #93a8be; --color-indigo-400: #6e89a6; --color-indigo-500: #4a6b8f; --color-indigo-600: #3a5572; --color-indigo-700: #2c4156; --color-indigo-800: #223343; --color-indigo-900: #1a2734; --color-indigo-950: #121a22;
+  --color-cyan-50: #eef2f6; --color-cyan-100: #dce4ec; --color-cyan-200: #b8c6d5; --color-cyan-300: #93a8be; --color-cyan-400: #6e89a6; --color-cyan-500: #4a6b8f; --color-cyan-600: #3a5572; --color-cyan-700: #2c4156; --color-cyan-800: #223343; --color-cyan-900: #1a2734; --color-cyan-950: #121a22;
+  /* the window model of the desk (neoffice_theme dialog_model.css) */
+  --kf-paper: #fdfbf7;
+  --kf-rail: #f6f3ed;
+  --kf-border: #dcd4c7;
+  --kf-edge: rgba(20, 16, 12, 0.16);
+  --kf-eyebrow: #524b41;
+  --kf-muted: #6f665a;
+  --kf-veil: rgba(46, 38, 30, 0.45);
+  --kf-shadow: 0 12px 24px rgba(40, 28, 18, 0.08), 0 32px 64px rgba(40, 28, 18, 0.16);
+  --kf-w: min(100vw, clamp(860px, 67vw, 960px));
+  --kf-rail-w: 320px;
+  --kf-gap: 12px;
+  --kf-pad: 32px;
+}
+@media screen {
+  html.kamra-framed.dark {
+    color-scheme: dark;
+    --color-white: #1c1c1c;
+    --color-zinc-50: #161616; --color-zinc-100: #232323; --color-zinc-200: #2e2e2e; --color-zinc-300: #3a3a3a; --color-zinc-400: #8a8a8a; --color-zinc-500: #9a9a9a; --color-zinc-600: #b4b4b4; --color-zinc-700: #d4d4d4; --color-zinc-800: #e8e8e8; --color-zinc-900: #f3f1ec; --color-zinc-950: #fffdf8;
+    --color-slate-50: #161616; --color-slate-100: #232323; --color-slate-200: #2e2e2e; --color-slate-300: #3a3a3a; --color-slate-400: #8a8a8a; --color-slate-500: #9a9a9a; --color-slate-600: #b4b4b4; --color-slate-700: #d4d4d4; --color-slate-800: #e8e8e8; --color-slate-900: #f3f1ec; --color-slate-950: #fffdf8;
+    --color-gray-50: #161616; --color-gray-100: #232323; --color-gray-200: #2e2e2e; --color-gray-300: #3a3a3a; --color-gray-400: #8a8a8a; --color-gray-500: #9a9a9a; --color-gray-600: #b4b4b4; --color-gray-700: #d4d4d4; --color-gray-800: #e8e8e8; --color-gray-900: #f3f1ec; --color-gray-950: #fffdf8;
+    --color-neutral-50: #161616; --color-neutral-100: #232323; --color-neutral-200: #2e2e2e; --color-neutral-300: #3a3a3a; --color-neutral-400: #8a8a8a; --color-neutral-500: #9a9a9a; --color-neutral-600: #b4b4b4; --color-neutral-700: #d4d4d4; --color-neutral-800: #e8e8e8; --color-neutral-900: #f3f1ec; --color-neutral-950: #fffdf8;
+    --color-stone-50: #161616; --color-stone-100: #232323; --color-stone-200: #2e2e2e; --color-stone-300: #3a3a3a; --color-stone-400: #8a8a8a; --color-stone-500: #9a9a9a; --color-stone-600: #b4b4b4; --color-stone-700: #d4d4d4; --color-stone-800: #e8e8e8; --color-stone-900: #f3f1ec; --color-stone-950: #fffdf8;
+    --color-violet-50: #161616; --color-violet-100: #232323; --color-violet-200: #2e2e2e; --color-violet-300: #3a3a3a; --color-violet-400: #8a8a8a; --color-violet-500: #9a9a9a; --color-violet-600: #b4b4b4; --color-violet-700: #d4d4d4; --color-violet-800: #e8e8e8; --color-violet-900: #f3f1ec; --color-violet-950: #fffdf8;
+    --color-purple-50: #161616; --color-purple-100: #232323; --color-purple-200: #2e2e2e; --color-purple-300: #3a3a3a; --color-purple-400: #8a8a8a; --color-purple-500: #9a9a9a; --color-purple-600: #b4b4b4; --color-purple-700: #d4d4d4; --color-purple-800: #e8e8e8; --color-purple-900: #f3f1ec; --color-purple-950: #fffdf8;
+    --color-brand-50: #43281c; --color-brand-100: #542d1b; --color-brand-200: #6e351b; --color-brand-300: #93401b; --color-brand-400: #f55d1a; --color-brand-500: #f55d1a; --color-brand-600: #fffdf8; --color-brand-700: #ece7de; --color-brand-800: #dcd4c7; --color-brand-900: #fffdf8; --color-brand-950: #fffdf8;
+    --color-emerald-50: #1c3125; --color-emerald-100: #1d3b2a; --color-emerald-200: #1d4a31; --color-emerald-300: #1e5f3b; --color-emerald-400: #35a768; --color-emerald-500: #4cb179; --color-emerald-600: #6dbf92; --color-emerald-700: #8fceab; --color-emerald-800: #b1ddc4; --color-emerald-900: #d2ebdd; --color-emerald-950: #e9f5ee;
+    --color-green-50: #1c3125; --color-green-100: #1d3b2a; --color-green-200: #1d4a31; --color-green-300: #1e5f3b; --color-green-400: #35a768; --color-green-500: #4cb179; --color-green-600: #6dbf92; --color-green-700: #8fceab; --color-green-800: #b1ddc4; --color-green-900: #d2ebdd; --color-green-950: #e9f5ee;
+    --color-teal-50: #1c3125; --color-teal-100: #1d3b2a; --color-teal-200: #1d4a31; --color-teal-300: #1e5f3b; --color-teal-400: #35a768; --color-teal-500: #4cb179; --color-teal-600: #6dbf92; --color-teal-700: #8fceab; --color-teal-800: #b1ddc4; --color-teal-900: #d2ebdd; --color-teal-950: #e9f5ee;
+    --color-rose-50: #3b2321; --color-rose-100: #4a2724; --color-rose-200: #612d28; --color-rose-300: #80342d; --color-rose-400: #e05c50; --color-rose-500: #e36e64; --color-rose-600: #e88981; --color-rose-700: #eea49e; --color-rose-800: #f3c0bb; --color-rose-900: #f8dbd8; --color-rose-950: #fcedec;
+    --color-red-50: #3b2321; --color-red-100: #4a2724; --color-red-200: #612d28; --color-red-300: #80342d; --color-red-400: #e05c50; --color-red-500: #e36e64; --color-red-600: #e88981; --color-red-700: #eea49e; --color-red-800: #f3c0bb; --color-red-900: #f8dbd8; --color-red-950: #fcedec;
+    --color-pink-50: #3b2321; --color-pink-100: #4a2724; --color-pink-200: #612d28; --color-pink-300: #80342d; --color-pink-400: #e05c50; --color-pink-500: #e36e64; --color-pink-600: #e88981; --color-pink-700: #eea49e; --color-pink-800: #f3c0bb; --color-pink-900: #f8dbd8; --color-pink-950: #fcedec;
+    --color-amber-50: #3b301a; --color-amber-100: #4b3a19; --color-amber-200: #634917; --color-amber-300: #825c15; --color-amber-400: #e3a227; --color-amber-500: #e6ad3f; --color-amber-600: #ebbc63; --color-amber-700: #f0cc87; --color-amber-800: #f4dbab; --color-amber-900: #f9eacf; --color-amber-950: #fcf5e7;
+    --color-yellow-50: #3b301a; --color-yellow-100: #4b3a19; --color-yellow-200: #634917; --color-yellow-300: #825c15; --color-yellow-400: #e3a227; --color-yellow-500: #e6ad3f; --color-yellow-600: #ebbc63; --color-yellow-700: #f0cc87; --color-yellow-800: #f4dbab; --color-yellow-900: #f9eacf; --color-yellow-950: #fcf5e7;
+    --color-orange-50: #3f261c; --color-orange-100: #502c1c; --color-orange-200: #6a331b; --color-orange-300: #8d3e1b; --color-orange-400: #f66d31; --color-orange-500: #f77d48; --color-orange-600: #f8966a; --color-orange-700: #faae8c; --color-orange-800: #fcc6af; --color-orange-900: #fddfd1; --color-orange-950: #feefe8;
+    --color-sky-50: #292e34; --color-sky-100: #303840; --color-sky-200: #3a4552; --color-sky-300: #47586b; --color-sky-400: #7d9abb; --color-sky-500: #8ca5c2; --color-sky-600: #a1b6ce; --color-sky-700: #b7c7d9; --color-sky-800: #cdd8e4; --color-sky-900: #e2e9f0; --color-sky-950: #f1f4f7;
+    --color-blue-50: #292e34; --color-blue-100: #303840; --color-blue-200: #3a4552; --color-blue-300: #47586b; --color-blue-400: #7d9abb; --color-blue-500: #8ca5c2; --color-blue-600: #a1b6ce; --color-blue-700: #b7c7d9; --color-blue-800: #cdd8e4; --color-blue-900: #e2e9f0; --color-blue-950: #f1f4f7;
+    --color-indigo-50: #292e34; --color-indigo-100: #303840; --color-indigo-200: #3a4552; --color-indigo-300: #47586b; --color-indigo-400: #7d9abb; --color-indigo-500: #8ca5c2; --color-indigo-600: #a1b6ce; --color-indigo-700: #b7c7d9; --color-indigo-800: #cdd8e4; --color-indigo-900: #e2e9f0; --color-indigo-950: #f1f4f7;
+    --color-cyan-50: #292e34; --color-cyan-100: #303840; --color-cyan-200: #3a4552; --color-cyan-300: #47586b; --color-cyan-400: #7d9abb; --color-cyan-500: #8ca5c2; --color-cyan-600: #a1b6ce; --color-cyan-700: #b7c7d9; --color-cyan-800: #cdd8e4; --color-cyan-900: #e2e9f0; --color-cyan-950: #f1f4f7;
+    --kf-paper: #1c1c1c;
+    --kf-rail: #232323;
+    --kf-border: #2e2e2e;
+    --kf-edge: rgba(255, 251, 245, 0.16);
+    --kf-eyebrow: #b4b4b4;
+    --kf-muted: #9a9a9a;
+    --kf-veil: rgba(0, 0, 0, 0.55);
+    --kf-shadow: 0 12px 24px rgba(0, 0, 0, 0.3), 0 32px 64px rgba(0, 0, 0, 0.45);
+  }
+}
+/* A narrow screen (a tablet): the card gives up 40 px to the form, as the desk's drawer. */
+@media (max-width: 999.98px) {
+  html.kamra-framed {
+    --kf-rail-w: 280px;
+  }
+}
 html.kamra-framed,
 html.kamra-framed body {
   background: transparent !important;
+}
+/* Titles and big figures in Forum (it has one weight: a bold one would be drawn by the browser). */
+html.kamra-framed :is(h1, h2, h3):is(.text-lg, .text-xl, .text-2xl, .text-3xl, .text-4xl),
+html.kamra-framed :is(.text-xl, .text-2xl, .text-3xl, .text-4xl):is(.font-semibold, .font-bold) {
+  font-family: var(--kf-font-title);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* //// Neoffice — the drawer of the desk (design system §6.18; neoffice_theme dialog_model.css « the creation drawer »):
+   docked at the right, 67 % of the width between 860 and 960 px, the form at the left, at the right one card 12 px from
+   the edges (what the window is about, then the foot: the ink action on top, full width), the cross in its corner. Under
+   768 px the window takes the width and the card is a foot again; under 576 px it rises from the bottom. Used by Sheet
+   (components/ui/sheet.tsx) and by the drawers drawn by hand (BookingDialog, GroupBookingDialog), the behaviour in
+   components/ui/framedDrawer.tsx. */
+html.kamra-framed [data-kf="sheet"] {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+html.kamra-framed [data-kf="veil"] {
+  position: absolute;
+  inset: 0;
+  background: var(--kf-veil);
+  animation: fade-in 0.18s ease-out;
+}
+html.kamra-framed [data-kf="panel"] {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: auto;
+  width: var(--kf-w);
+  max-width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--kf-rail-w);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    "head rail"
+    "body rail";
+  background: var(--kf-paper);
+  color: var(--color-zinc-900);
+  border: 0;
+  border-left: 1px solid var(--kf-edge);
+  border-radius: 20px 0 0 20px;
+  box-shadow: var(--kf-shadow);
+  overflow: hidden;
+  outline: none;
+  animation: kf-in-side 320ms cubic-bezier(0.3, 0, 0, 1);
+}
+/* A drawer that has finished its work (a booking made) shows its result without the card. */
+html.kamra-framed [data-kf="panel"][data-kf-rail="none"] {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "head"
+    "body";
+}
+html.kamra-framed [data-kf="split"] {
+  display: contents;
+}
+html.kamra-framed [data-kf="head"] {
+  grid-area: head;
+  min-width: 0;
+  margin: 0;
+  padding: var(--kf-pad) var(--kf-pad) 20px;
+  background: transparent;
+  border: 0;
+}
+html.kamra-framed [data-kf="panel"][data-kf-rail="none"] [data-kf="head"] {
+  padding-right: 72px;
+}
+html.kamra-framed [data-kf="eyebrow"] {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--kf-eyebrow);
+}
+html.kamra-framed [data-kf="title"] {
+  margin: 0;
+  font-family: var(--kf-font-title);
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: 0;
+  color: var(--color-zinc-950);
+  overflow-wrap: anywhere;
+}
+html.kamra-framed [data-kf="desc"] {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--kf-muted);
+}
+html.kamra-framed [data-kf="close"] {
+  position: absolute;
+  top: calc(var(--kf-gap) + 10px);
+  right: calc(var(--kf-gap) + 10px);
+  z-index: 3;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--kf-eyebrow);
+}
+html.kamra-framed [data-kf="close"]:hover {
+  background: var(--color-zinc-100);
+  color: var(--color-zinc-950);
+}
+html.kamra-framed [data-kf="body"] {
+  grid-area: body;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  overflow-y: auto;
+  padding: 0 var(--kf-pad) var(--kf-pad);
+  background: transparent;
+}
+html.kamra-framed [data-kf="rail"] {
+  grid-area: rail;
+  min-height: 0;
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  margin: var(--kf-gap) var(--kf-gap) var(--kf-gap) 0;
+  background: var(--kf-rail);
+  border: 1px solid var(--kf-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+html.kamra-framed [data-kf="aside"] {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 18px 8px;
+  background: transparent;
+}
+/* The aside's first line leaves the cross its corner. */
+html.kamra-framed [data-kf="aside"] > :first-child {
+  margin-right: 40px;
+}
+html.kamra-framed [data-kf="rail-eyebrow"] {
+  margin: 4px 40px 12px 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--kf-eyebrow);
+}
+html.kamra-framed [data-kf="card"] {
+  padding: 14px;
+  background: var(--kf-paper);
+  border: 1px solid var(--kf-border);
+  border-radius: 14px;
+}
+html.kamra-framed [data-kf="card-name"] {
+  font-family: var(--kf-font-title);
+  font-size: 20px;
+  line-height: 1.25;
+  color: var(--color-zinc-950);
+  overflow-wrap: anywhere;
+}
+html.kamra-framed [data-kf="card-sub"] {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--kf-muted);
+}
+html.kamra-framed [data-kf="kv"] {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--kf-border);
+}
+html.kamra-framed [data-kf="kv"] > div {
+  display: grid;
+  grid-template-columns: minmax(0, 45%) minmax(0, 1fr);
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+html.kamra-framed [data-kf="kv"] dt {
+  color: var(--kf-muted);
+}
+html.kamra-framed [data-kf="kv"] dd {
+  margin: 0;
+  text-align: right;
+  color: var(--color-zinc-900);
+  overflow-wrap: anywhere;
+}
+/* The foot: the bottom of the card, the ink action on top, each button the card's width. */
+html.kamra-framed [data-kf="foot"] {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 18px 18px;
+  background: transparent;
+  border: 0;
+}
+html.kamra-framed [data-kf="foot"] > * {
+  margin: 0;
+}
+html.kamra-framed [data-kf="foot"]:not([data-kf-foot="stack"]):has(> :is(button, a)),
+html.kamra-framed [data-kf="foot"] div:has(> :is(button, a)) {
+  display: flex;
+  flex-direction: column-reverse;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+html.kamra-framed [data-kf="foot"] :is(button, a) {
+  width: 100%;
+  min-height: 44px;
+  justify-content: center;
+  text-align: center;
+}
+/* The key of a button, after its label (the desk's .neo-kbd). */
+html.kamra-framed [data-kf-key]::after {
+  content: attr(data-kf-key);
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  opacity: 0.7;
+}
+/* The question before leaving (the desk's question window, 440 px). */
+html.kamra-framed [data-kf="ask-layer"] {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+html.kamra-framed [data-kf="ask-veil"] {
+  position: absolute;
+  inset: 0;
+  background: var(--kf-veil);
+}
+html.kamra-framed [data-kf="ask"] {
+  position: relative;
+  width: min(440px, 100%);
+  padding: var(--kf-pad);
+  background: var(--kf-paper);
+  color: var(--color-zinc-900);
+  border: 1px solid var(--kf-border);
+  border-radius: 20px;
+  box-shadow: var(--kf-shadow);
+  outline: none;
+}
+html.kamra-framed [data-kf="ask-title"] {
+  margin: 0 0 24px;
+  font-family: var(--kf-font-title);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--color-zinc-950);
+}
+html.kamra-framed [data-kf="ask-foot"] {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+html.kamra-framed [data-kf="ask-foot"] button {
+  min-height: 40px;
+  padding-inline: 16px;
+}
+@keyframes kf-in-side {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes kf-in-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+/* A phone or a narrow tablet: the window takes the width, the card is a foot again (the summary goes, a card of the
+   drawer's own, as the booking's quote, stays above the foot and scrolls). */
+@media (max-width: 767.98px) {
+  html.kamra-framed {
+    --kf-pad: 20px;
+  }
+  html.kamra-framed [data-kf="panel"] {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    border-left: 0;
+    border-radius: 0;
+  }
+  html.kamra-framed [data-kf="head"] {
+    flex: none;
+    padding: var(--kf-pad) 64px 12px var(--kf-pad);
+  }
+  html.kamra-framed [data-kf="title"] {
+    font-size: 22px;
+  }
+  html.kamra-framed [data-kf="close"] {
+    top: 12px;
+    right: 12px;
+  }
+  html.kamra-framed [data-kf="body"] {
+    flex: 1 1 auto;
+  }
+  html.kamra-framed [data-kf="rail"] {
+    flex: none;
+    max-height: 50%;
+    margin: 0;
+    border-width: 1px 0 0;
+    border-radius: 0;
+  }
+  html.kamra-framed [data-kf="aside"][data-kf-aside="summary"] {
+    display: none;
+  }
+  html.kamra-framed [data-kf="aside"] {
+    max-height: 30vh;
+  }
+  html.kamra-framed [data-kf="aside"] > :first-child {
+    margin-right: 0;
+  }
+  html.kamra-framed [data-kf="foot"] {
+    padding: 12px var(--kf-pad) calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+  html.kamra-framed [data-kf="foot"]:not([data-kf-foot="stack"]):has(> :is(button, a)),
+  html.kamra-framed [data-kf="foot"] div:has(> :is(button, a)) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  html.kamra-framed [data-kf="foot"] :is(button, a) {
+    width: auto;
+    flex: 1 1 auto;
+  }
+}
+@media (max-width: 575.98px) {
+  html.kamra-framed [data-kf="panel"] {
+    top: auto;
+    height: auto;
+    max-height: calc(100% - 16px);
+    border-top: 1px solid var(--kf-edge);
+    border-radius: 20px 20px 0 0;
+    animation-name: kf-in-up;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.kamra-framed [data-kf="panel"],
+  html.kamra-framed [data-kf="veil"] {
+    animation: none;
+  }
 }

@@ -727,10 +727,11 @@ export const reservationsConfig: ScreenConfig = {
     { field: "check_in_date", label: "In" },
     { field: "check_out_date", label: "Out" },
     { field: "status", label: "Status", badge: true },
-    { field: "booking_type", label: "Type" },
+    { field: "booking_type", label: "Type", translate: true }, //// Neoffice — « Individual » shown translated
     { field: "source", label: "Source" },
-    { field: "amount_after_tax", label: `Total ${cur()}` },
-    { field: "advance_paid", label: `Advance ${cur()}` },
+    //// Neoffice — the two money columns: the label through t(), the currency added at render (ResourceScreen `currency`)
+    { field: "amount_after_tax", label: "Total", currency: true },
+    { field: "advance_paid", label: "Advance", currency: true },
   ],
   // Editing happens in the bespoke detail panel; keep a minimal form as the
   // fallback shape the generic screen still expects.

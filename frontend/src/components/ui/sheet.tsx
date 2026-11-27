@@ -1,13 +1,12 @@
-import { useEffect } from "react"
+import { useEffect, useId, useRef } from "react" //// Neoffice — useId, useRef: the framed drawer below
 import { X } from "lucide-react"
 import { Button } from "./button"
 import { t as translate, useUILanguage } from "../../lib/i18n"
+import { FramedLeaveQuestion, FramedSummary, useFramedDrawer } from "./framedDrawer" //// Neoffice
+import { framedUI } from "../../lib/framed" //// Neoffice
 
-/**
- * Right-side drawer for create/edit forms - Kamra's standard form surface.
- * Content scrolls; header and footer stay pinned.
- */
-export function Sheet(props: {
+//// Neoffice — the props are named once for the two drawers below; `eyebrow` and `aside` are read by the framed one only.
+type SheetProps = {
   title: string
   description?: string
   onClose: () => void
@@ -15,7 +14,24 @@ export function Sheet(props: {
   children: React.ReactNode
   /** Wide surface (~2/3 screen) for rich detail panels. */
   wide?: boolean
-}) {
+  /** Framed in the desk: the line above the title (the Hotel space by default). */
+  eyebrow?: string
+  /** Framed in the desk: the card at the right; without it the drawer sums up its own fields. */
+  aside?: React.ReactNode
+}
+
+/**
+ * Right-side drawer for create/edit forms - Kamra's standard form surface.
+ * Content scrolls; header and footer stay pinned.
+ */
+//// Neoffice — framed in a tab of the Neoffice desk (lib/framed.ts), the drawer is the desk's (FramedSheet below, the
+//// window model of the design system); the standalone application keeps Kamra's own drawer (PlainSheet).
+export function Sheet(props: SheetProps) {
+  return framedUI() ? <FramedSheet {...props} /> : <PlainSheet {...props} />
+}
+
+//// Neoffice — Kamra's drawer, unchanged, renamed from Sheet so that the framed one can stand beside it.
+function PlainSheet(props: SheetProps) {
   useUILanguage()
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -66,6 +82,56 @@ export function Sheet(props: {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+//// Neoffice — added: the drawer of the desk's window model (design system §6.18), the look in index.css ([data-kf]),
+//// the behaviour in framedDrawer.tsx (protected exit, focus kept and given back, keys shown). The form at the left, at
+//// the right one card: the drawer's own `aside`, or the summary of its fields, and the foot with the ink action.
+function FramedSheet(props: SheetProps) {
+  useUILanguage()
+  const kf = useFramedDrawer({ onClose: props.onClose })
+  const body = useRef<HTMLDivElement>(null)
+  const titleId = useId()
+  useEffect(() => {
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = ""
+    }
+  }, [])
+
+  return (
+    <div data-kf="sheet" ref={kf.root} role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <div data-kf="veil" onClick={kf.attemptClose} aria-hidden />
+      <div data-kf="panel" tabIndex={-1}>
+        <header data-kf="head">
+          <p data-kf="eyebrow">{props.eyebrow ?? translate("Hotel")}</p>
+          <h2 data-kf="title" id={titleId}>
+            {props.title}
+          </h2>
+          {props.description ? <p data-kf="desc">{props.description}</p> : null}
+        </header>
+        <button
+          type="button"
+          data-kf="close"
+          onClick={kf.attemptClose}
+          aria-label={translate("Close")}
+          title={`${translate("Close")} (Esc)`}
+        >
+          <X className="size-5" />
+        </button>
+        <div data-kf="body" ref={body}>
+          {props.children}
+        </div>
+        <div data-kf="rail">
+          <div data-kf="aside" data-kf-aside={props.aside ? "own" : "summary"}>
+            {props.aside ?? <FramedSummary title={props.title} description={props.description} body={body} />}
+          </div>
+          {props.footer ? <div data-kf="foot">{props.footer}</div> : null}
+        </div>
+      </div>
+      {kf.asking ? <FramedLeaveQuestion title={props.title} onKeep={kf.keep} onDiscard={kf.discard} /> : null}
     </div>
   )
 }

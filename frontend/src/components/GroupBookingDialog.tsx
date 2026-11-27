@@ -12,6 +12,7 @@ import { serverError } from "../lib/resource"
 import { cur, fmtAmount } from "../lib/money"
 import { useT } from "../lib/i18n"
 import { Button } from "./ui/button"
+import { FramedLeaveQuestion, FramedSummary, useFramedDrawer } from "./ui/framedDrawer" //// Neoffice — the desk's drawer when framed
 import PhoneInput from "./PhoneInput"
 
 /** New group booking (corporate, wedding, event), in the order the desk
@@ -142,6 +143,15 @@ export default function GroupBookingDialog(props: {
   const [pasteText, setPasteText] = useState("")
   const fileRef = useRef<HTMLInputElement>(null)
   const [result, setResult] = useState<Result | null>(null)
+  //// Neoffice — framed in the desk, this window is the desk's drawer (components/ui/framedDrawer.tsx, index.css
+  //// [data-kf]): the steps at the left, at the right one card with what the group holds so far and the foot; leaving is
+  //// protected once something was typed, and a group created is saved work (closing after it asks nothing).
+  const kf = useFramedDrawer({ onClose: props.onClose })
+  const kfClean = kf.clean
+  const kfBody = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (result) kfClean()
+  }, [result, kfClean])
   const [prices, setPrices] = useState<Prices | null>(null)
   const [ownDates, setOwnDates] = useState(false)
   const [contract, setContract] = useState({ deposit_due: "", attrition_pct: "", quotation_only: false })
@@ -384,13 +394,19 @@ export default function GroupBookingDialog(props: {
       role="dialog"
       aria-modal="true"
       aria-label={t("New group booking")}
-      onKeyDown={(e) => e.key === "Escape" && props.onClose()}
+      //// Neoffice — framed: Escape and the veil go through the drawer's protected exit (framedDrawer.tsx)
+      onKeyDown={(e) => !kf.framed && e.key === "Escape" && props.onClose()}
+      data-kf="sheet"
+      ref={kf.root}
     >
-      <div className="absolute inset-0 bg-black/40 animate-fade-in" onClick={props.onClose} aria-hidden />
-      <div className="absolute inset-y-0 right-0 flex h-full w-full flex-col bg-white shadow-2xl animate-sheet-in md:w-2/3 lg:w-1/2">
-        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-zinc-200 px-6 py-4">
+      {/* //// Neoffice — the veil asks first once something was typed; data-kf: the parts of the desk's drawer (framed) */}
+      <div className="absolute inset-0 bg-black/40 animate-fade-in" onClick={kf.attemptClose} aria-hidden data-kf="veil" />
+      <div className="absolute inset-y-0 right-0 flex h-full w-full flex-col bg-white shadow-2xl animate-sheet-in md:w-2/3 lg:w-1/2"
+        data-kf="panel" tabIndex={-1}>
+        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-zinc-200 px-6 py-4" data-kf="head">
           <div className="min-w-0">
-            <h2 className="text-xl font-semibold tracking-tight text-zinc-900">{t("New group booking")}</h2>
+            {kf.framed ? <p data-kf="eyebrow">{t("Group booking")}</p> : null}{/* //// Neoffice — the desk's eyebrow */}
+            <h2 className="text-xl font-semibold tracking-tight text-zinc-900" data-kf="title">{t("New group booking")}</h2>
             <ol className="mt-1 flex flex-wrap gap-3 text-xs">
               {steps.map((s, i) => (
                 <li key={s} className={i + 1 === step ? "font-semibold text-brand-700" : "text-zinc-400"}>
@@ -399,12 +415,15 @@ export default function GroupBookingDialog(props: {
               ))}
             </ol>
           </div>
-          <button onClick={props.onClose} aria-label={t("Close")} className="text-zinc-400 hover:text-zinc-700">
+          {/* //// Neoffice — framed: the cross sits in the card's corner and asks first once something was typed */}
+          <button onClick={kf.attemptClose} aria-label={t("Close")} className="text-zinc-400 hover:text-zinc-700"
+            data-kf="close" title={kf.framed ? `${t("Close")} (Esc)` : undefined}>
             <X className="size-5" />
           </button>
         </header>
 
-        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
+        {/* //// Neoffice — the drawer's body, read by the card's summary when framed */}
+        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5" data-kf="body" ref={kfBody}>
           {error && (
             <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
           )}
@@ -779,7 +798,14 @@ export default function GroupBookingDialog(props: {
           )}
         </div>
 
-        <footer className="flex shrink-0 items-center justify-between gap-2 border-t border-zinc-200 px-6 py-3">
+        {/* //// Neoffice — framed: the card at the right (what the group holds so far, then the foot) */}
+        <div className="shrink-0" data-kf="rail">
+        {kf.framed ? (
+          <div data-kf="aside" data-kf-aside="summary">
+            <FramedSummary title={t("New group booking")} description={steps[step - 1]} body={kfBody} />
+          </div>
+        ) : null}
+        <footer className="flex shrink-0 items-center justify-between gap-2 border-t border-zinc-200 px-6 py-3" data-kf="foot">
           {result ? (
             <>
               <Button variant="outline" onClick={() => props.onDone()}>{t("Done")}</Button>
@@ -801,7 +827,12 @@ export default function GroupBookingDialog(props: {
             </>
           )}
         </footer>
+        {/* //// Neoffice — end of the card */}
+        </div>
       </div>
+      {kf.asking ? (
+        <FramedLeaveQuestion title={t("New group booking")} onKeep={kf.keep} onDiscard={kf.discard} />
+      ) : null}{/* //// Neoffice — the desk's question before leaving a group being typed */}
     </div>
   )
 }

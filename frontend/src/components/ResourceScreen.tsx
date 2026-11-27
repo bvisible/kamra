@@ -27,7 +27,7 @@ import { Switch } from "./ui/switch"
 import ImageField from "./ImageField"
 import ChoiceGroupsField from "./ChoiceGroupsField"
 import TagPills from "./TagPills"
-import { fmtAmount } from "../lib/money"
+import { cur, fmtAmount } from "../lib/money" //// Neoffice — cur: the currency after a money column's label
 import { useT, t as translate, useUILanguage } from "../lib/i18n"
 import { useAuth } from "../lib/auth"
 import { downloadCsv } from "../lib/csv"
@@ -148,6 +148,11 @@ export interface ScreenConfig {
     badge?: boolean
     /** Map a Check field (0/1) to Active / Disabled badges. */
     statusCheck?: boolean
+    //// Neoffice — a value the server keeps in English (a Select: « Individual », « Group ») is shown translated, and a
+    //// money column says its currency after its translated label, at render time (the currency is known by then; a
+    //// label built when the module loads kept the English word and an empty or wrong symbol).
+    translate?: boolean
+    currency?: boolean
   }[]
   form: FieldSpec[]
   propertyScoped?: boolean
@@ -598,7 +603,7 @@ export function ResourceScreen({
     const cols = visibleCols
     downloadCsv(
       `${config.doctype.toLowerCase().replace(/ /g, "-")}-${new Date().toISOString().slice(0, 10)}`,
-      cols.map((c) => c.label),
+      cols.map((c) => (c.currency ? `${c.label} ${cur()}` : c.label)), //// Neoffice — the currency of a money column
       all.map((r) => cols.map((c) => r[c.field] as string | number | null)),
     )
   }
@@ -765,7 +770,8 @@ export function ResourceScreen({
               </select>
             ))}
             {config.dateFilter && (
-              <div className="flex items-center gap-1.5 text-sm text-zinc-500">
+              //// Neoffice — flex-wrap: at 390 px the second date field ran 10 px out of its card
+              <div className="flex flex-wrap items-center gap-1.5 text-sm text-zinc-500">
                 <span className="text-xs">{t(config.dateFilter.label)}</span>
                 <input
                   type="date"
@@ -827,7 +833,7 @@ export function ResourceScreen({
                         checked={!hiddenCols.has(c.field)}
                         onChange={() => toggleCol(c.field)}
                       />
-                      {t(c.label)}
+                      {t(c.label)}{c.currency ? ` ${cur()}` : ""}{/* //// Neoffice — the currency of a money column */}
                     </label>
                   ))}
                   <button
@@ -851,7 +857,7 @@ export function ResourceScreen({
                       "py-2 pr-4" + (i === 0 ? " w-[22%]" : "")
                     }
                   >
-                    {t(c.label)}
+                    {t(c.label)}{c.currency ? ` ${cur()}` : ""}{/* //// Neoffice — the currency of a money column */}
                   </th>
                 ))}
               </tr>
@@ -883,6 +889,8 @@ export function ResourceScreen({
                         >
                           {t(String(row[c.field]))}
                         </Badge>
+                      ) : c.translate && row[c.field] ? (
+                        t(String(row[c.field])) /* //// Neoffice — a Select value the server keeps in English */
                       ) : (
                         cellValue(row[c.field], t)
                       )}

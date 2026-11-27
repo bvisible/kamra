@@ -18,6 +18,7 @@ import {
 } from "../lib/api"
 import { pickDefaultRoomType } from "../lib/bookingDefaults"
 import { Button } from "./ui/button"
+import { FramedLeaveQuestion, useFramedDrawer } from "./ui/framedDrawer" //// Neoffice — the desk's drawer when framed
 import { cur, useLocale, fmtAmount } from "../lib/money"
 import { isPhoneComplete } from "../lib/phone"
 import { nightsBetween, parseDate, shiftDate } from "../lib/stay"
@@ -139,6 +140,14 @@ export function BookingDialog(props: {
   } | null>(
     null,
   )
+  //// Neoffice — framed in the desk, this window is the desk's drawer (components/ui/framedDrawer.tsx, index.css
+  //// [data-kf]): the form at the left, the quote and the foot in one card at the right, leaving protected once something
+  //// was typed. A booking made is saved work: closing after it asks nothing.
+  const kf = useFramedDrawer({ onClose: props.onClose })
+  const kfClean = kf.clean
+  useEffect(() => {
+    if (done) kfClean()
+  }, [done, kfClean])
   /** a deferred walk-in: the guided check-in is open for it */
   const [guidedCheckIn, setGuidedCheckIn] = useState<string | null>(null)
   const [walkInCheckedIn, setWalkInCheckedIn] = useState(false)
@@ -968,19 +977,28 @@ export function BookingDialog(props: {
       role="dialog"
       aria-modal="true"
       aria-label={(walkIn ? t("Walk-in") : t("New booking"))}
-      onKeyDown={(e) => e.key === "Escape" && props.onClose()}
+      //// Neoffice — framed: Escape goes through the drawer's protected exit (framedDrawer.tsx), not straight to onClose
+      onKeyDown={(e) => !kf.framed && e.key === "Escape" && props.onClose()}
+      data-kf="sheet"
+      ref={kf.root}
     >
       <div
         className="absolute inset-0 bg-black/40 animate-fade-in"
-        onClick={props.onClose}
+        onClick={kf.attemptClose} //// Neoffice — the veil asks first once something was typed (framed)
         aria-hidden
+        data-kf="veil"
       />
       <div
         className="absolute inset-y-0 right-0 flex h-full w-full flex-col bg-white shadow-2xl animate-sheet-in md:w-2/3"
+        data-kf="panel" //// Neoffice — the desk's drawer when framed; the result of a booking shows without the card
+        data-kf-rail={done ? "none" : undefined}
+        tabIndex={-1}
       >
-        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-zinc-200 px-6 py-4 md:px-8">
+        {/* //// Neoffice — data-kf: the parts of the desk's drawer, laid out by index.css when framed (inert otherwise) */}
+        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-zinc-200 px-6 py-4 md:px-8" data-kf="head">
           <div className="min-w-0">
-            <h2 className="text-xl font-semibold tracking-tight text-zinc-900">
+            {kf.framed ? <p data-kf="eyebrow">{t("Reservations")}</p> : null}{/* //// Neoffice — the desk's eyebrow */}
+            <h2 className="text-xl font-semibold tracking-tight text-zinc-900" data-kf="title">
               {walkIn ? t("Walk-in") : t("New booking")}
             </h2>
             <p className="mt-0.5 truncate text-sm text-zinc-500">
@@ -1025,13 +1043,16 @@ export function BookingDialog(props: {
               ))}
             </div>
           )}
-          <Button variant="ghost" onClick={props.onClose} aria-label={t("Close")}>
+          {/* //// Neoffice — framed: the cross sits in the card's corner and asks first once something was typed */}
+          <Button variant="ghost" onClick={kf.attemptClose} aria-label={t("Close")} data-kf="close"
+            title={kf.framed ? `${t("Close")} (Esc)` : undefined}>
             <X className="size-5" />
           </Button>
         </header>
 
         {done ? (
-          <div className="space-y-5 overflow-y-auto px-6 py-8 md:px-8">
+          //// Neoffice — the result of a booking is the drawer's body (data-kf, read when framed)
+          <div className="space-y-5 overflow-y-auto px-6 py-8 md:px-8" data-kf="body">
             {done.walkIn ? (
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-800">
                 <p className="text-lg font-semibold">
@@ -1167,9 +1188,9 @@ export function BookingDialog(props: {
             </div>
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+          <div className="flex min-h-0 flex-1 flex-col lg:flex-row" data-kf="split">{/* //// Neoffice — framed: the drawer's grid */}
             {/* Form */}
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5 md:px-8 md:py-6">
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5 md:px-8 md:py-6" data-kf="body">
               <div className="w-full max-w-none space-y-6">
                 {options?.property?.sell_message && (
                   <div className="flex items-start gap-2 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-900">
@@ -2487,8 +2508,9 @@ export function BookingDialog(props: {
             </div>
 
             {/* Quote rail - always visible on lg */}
-            <aside className="flex w-full shrink-0 flex-col border-t border-zinc-200 bg-zinc-50 lg:w-80 lg:border-l lg:border-t-0 xl:w-[22rem]">
-              <div className="flex-1 overflow-y-auto px-6 py-5 md:px-7">
+            {/* //// Neoffice — framed: the card at the right of the desk's drawer, the quote above, the foot under it */}
+            <aside className="flex w-full shrink-0 flex-col border-t border-zinc-200 bg-zinc-50 lg:w-80 lg:border-l lg:border-t-0 xl:w-[22rem]" data-kf="rail">
+              <div className="flex-1 overflow-y-auto px-6 py-5 md:px-7" data-kf="aside" data-kf-aside="own">
                 <div className="mb-4 flex items-center justify-between">
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
                     {t("Quote")}
@@ -2656,7 +2678,8 @@ export function BookingDialog(props: {
                 )}
               </div>
 
-              <div className="shrink-0 space-y-2 border-t border-zinc-200 bg-white px-6 py-4 md:px-7">
+              {/* //// Neoffice — the foot of the card when framed, its order kept: the ink action first */}
+              <div className="shrink-0 space-y-2 border-t border-zinc-200 bg-white px-6 py-4 md:px-7" data-kf="foot" data-kf-foot="stack">
                 {walkIn ? (
                   <>
                     {tillClosed && (
@@ -2734,6 +2757,13 @@ export function BookingDialog(props: {
           }}
         />
       )}
+      {kf.asking ? (
+        <FramedLeaveQuestion
+          title={walkIn ? t("Walk-in") : t("New booking")}
+          onKeep={kf.keep}
+          onDiscard={kf.discard}
+        />
+      ) : null}{/* //// Neoffice — the desk's question before leaving a booking being typed */}
     </div>
   )
 }

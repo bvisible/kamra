@@ -22,6 +22,12 @@ export function isFramed(): boolean {
   }
 }
 
+/** Whether the interface wears the desk's look: main.tsx marks <html class="kamra-framed"> before the first render, once,
+ *  so a component asks the class (cheap, on every render) rather than the windows again. */
+export function framedUI(): boolean {
+  return typeof document !== "undefined" && document.documentElement.classList.contains("kamra-framed")
+}
+
 /** The frame tells the desk the screen it shows: `{ type, path }`, the path inside the application. */
 export const ROUTE_MESSAGE = "kamra:route"
 /** The desk tells the frame the screen to show: `{ type, path }`. */
