@@ -199,14 +199,16 @@ export function FramedLeaveQuestion(props: { title?: string; onKeep: () => void;
   )
 }
 
-type Row = { label: string; value: string }
+/** A field of the summary: its label, its value, and whether it is a name typed (the card's name, as the desk's). */
+type Row = { label: string; value: string; named: boolean }
 
 const SKIP_TYPES = new Set(["hidden", "password", "file", "search", "button", "submit", "reset", "image", "range", "color"])
+const squash = (text: string | null | undefined) => (text || "").replace(/\s+/g, " ").trim()
 
 function ownText(label: Element, field: Element): string {
   for (const node of Array.from(label.childNodes)) {
     if (node === field || (node instanceof Element && node.contains(field))) continue
-    const text = (node.textContent || "").replace(/\s+/g, " ").trim()
+    const text = squash(node.textContent)
     if (text) return text
   }
   return ""
@@ -222,10 +224,26 @@ function labelOf(el: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)
   }
   const prev = el.previousElementSibling
   if (prev && /^(LABEL|SPAN|P|DIV)$/.test(prev.tagName) && !prev.querySelector("input, select, textarea")) {
-    const text = (prev.textContent || "").replace(/\s+/g, " ").trim()
+    const text = squash(prev.textContent)
     if (text && text.length <= 60) return text
   }
   return (el.getAttribute("placeholder") || "").trim()
+}
+
+/** The question a group of radio buttons answers (« Qui paie »): its legend, or the line just above the group. */
+function groupLabelOf(el: HTMLInputElement): string {
+  const box = el.closest("fieldset, [role='radiogroup']")
+  if (box) {
+    const legend = box.querySelector("legend")
+    const text = squash(box.getAttribute("aria-label") || (legend && legend.textContent))
+    if (text) return text
+  }
+  let group: Element | null = el.closest("label") || el
+  const same = `input[type='radio'][name='${CSS.escape(el.name)}']`
+  while (group && group.parentElement && group.parentElement.querySelectorAll(same).length <= 1) group = group.parentElement
+  const prev = group && group.parentElement ? group.parentElement.previousElementSibling : null
+  const text = prev && !prev.querySelector("input, select, textarea") ? squash(prev.textContent) : ""
+  return text.length <= 60 ? text : ""
 }
 
 function dateText(value: string): string {
@@ -242,37 +260,55 @@ function dateText(value: string): string {
   }
 }
 
-function valueOf(el: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): string | null {
-  if (el instanceof HTMLSelectElement) {
-    if (!el.value) return null
-    const option = el.selectedOptions[0]
-    return option ? option.text.trim() : el.value
+function rowOf(el: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): Row | null | undefined {
+  // undefined: not a field of the summary; null: a field left empty
+  if (el instanceof HTMLInputElement && el.type === "radio") {
+    if (!el.checked) return undefined
+    const question = groupLabelOf(el)
+    const answer = labelOf(el)
+    if (!answer) return undefined
+    return question ? { label: question, value: answer, named: false } : { label: answer, value: "✓", named: false }
   }
-  if (el instanceof HTMLInputElement && (el.type === "checkbox" || el.type === "radio")) return el.checked ? "✓" : null
+  const label = labelOf(el)
+  if (!label) return undefined
+  if (el instanceof HTMLSelectElement) {
+    const option = el.selectedOptions[0]
+    return el.value ? { label, value: option ? option.text.trim() : el.value, named: false } : null
+  }
+  if (el instanceof HTMLInputElement && el.type === "checkbox") return el.checked ? { label, value: "✓", named: false } : null
   const raw = (el.value || "").trim()
   if (!raw) return null
-  if (el instanceof HTMLInputElement && el.type === "date") return dateText(raw)
-  return raw.length > 80 ? raw.slice(0, 79) + "…" : raw
+  if (el instanceof HTMLInputElement && el.type === "date") return { label, value: dateText(raw), named: false }
+  const value = raw.length > 80 ? raw.slice(0, 79) + "…" : raw
+  // a name is words typed in a line of text: not a number, an amount, a date, a phone or an address
+  const line = el instanceof HTMLInputElement && el.type === "text" && el.inputMode !== "decimal" && el.inputMode !== "numeric"
+  return { label, value, named: line && /\p{L}/u.test(raw) }
 }
 
-/** What the form holds now, field by field; a field gone from the screen (a wizard's past step) keeps its value. */
-function readFields(body: Element, known: Map<string, string>): Row[] {
+/** What the form holds now, field by field, in the order of the screen; a field gone from it (a wizard's past step)
+ *  keeps its value and comes first. */
+function readFields(body: Element, known: Map<string, Row>): Row[] {
+  const here = new Map<string, Row>()
+  const emptied = new Set<string>()
   body.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea").forEach((el) => {
     if (el instanceof HTMLInputElement && SKIP_TYPES.has(el.type)) return
     if (el.closest("table, [data-kf-skip]") || !visible(el)) return
-    const label = labelOf(el)
-    if (!label) return
-    const value = valueOf(el)
-    if (value === null) known.delete(label)
-    else known.set(label, value)
+    const row = rowOf(el)
+    if (row === undefined) return
+    if (row === null) emptied.add(labelOf(el))
+    else if (!here.has(row.label)) here.set(row.label, row)
   })
-  return Array.from(known, ([label, value]) => ({ label, value })).slice(0, 14)
+  const past = Array.from(known.values()).filter((r) => !here.has(r.label) && !emptied.has(r.label))
+  known.clear()
+  for (const r of [...past, ...here.values()]) known.set(r.label, r)
+  return Array.from(known.values()).slice(0, 15)
 }
 
-/** The card of a drawer that has none of its own: the window's title, its line, and the fields filled so far. */
+/** The card of a drawer that has none of its own (the desk's « what will be created »): the first name typed, else the
+ *  window's title, quiet; the line it is given; then the fields filled so far. */
 export function FramedSummary(props: { title: string; description?: string; body: RefObject<HTMLElement | null> }) {
   const [rows, setRows] = useState<Row[]>([])
-  const known = useRef(new Map<string, string>())
+  const known = useRef(new Map<string, Row>())
   useEffect(() => {
     const body = props.body.current
     if (!body) return
@@ -303,15 +339,19 @@ export function FramedSummary(props: { title: string; description?: string; body
       watch.disconnect()
     }
   }, [props.body])
+  const name = rows.find((r) => r.named)
+  const rest = rows.filter((r) => r !== name)
   return (
     <>
       <p data-kf="rail-eyebrow">{translate("Summary")}</p>
       <div data-kf="card">
-        <div data-kf="card-name">{props.title}</div>
+        <div data-kf="card-name" data-kf-empty={name ? undefined : ""}>
+          {name ? name.value : props.title}
+        </div>
         {props.description ? <div data-kf="card-sub">{props.description}</div> : null}
-        {rows.length ? (
+        {rest.length ? (
           <dl data-kf="kv">
-            {rows.map((r) => (
+            {rest.map((r) => (
               <div key={r.label}>
                 <dt>{r.label}</dt>
                 <dd>{r.value}</dd>

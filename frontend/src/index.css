@@ -322,6 +322,10 @@ html.kamra-framed,
 html.kamra-framed body {
   background: transparent !important;
 }
+/* //// Neoffice — a box ticked or a choice made is ink, as the desk's (the browser's own blue otherwise). */
+html.kamra-framed {
+  accent-color: var(--color-brand-600);
+}
 /* Titles and big figures in Forum (it has one weight: a bold one would be drawn by the browser). */
 html.kamra-framed :is(h1, h2, h3):is(.text-lg, .text-xl, .text-2xl, .text-3xl, .text-4xl),
 html.kamra-framed :is(.text-xl, .text-2xl, .text-3xl, .text-4xl):is(.font-semibold, .font-bold) {
@@ -492,6 +496,10 @@ html.kamra-framed [data-kf="card-name"] {
   color: var(--color-zinc-950);
   overflow-wrap: anywhere;
 }
+/* //// Neoffice — no name typed yet: the window's title, quiet. */
+html.kamra-framed [data-kf="card-name"][data-kf-empty] {
+  color: var(--kf-muted);
+}
 html.kamra-framed [data-kf="card-sub"] {
   margin-top: 4px;
   font-size: 13px;
@@ -633,9 +641,17 @@ html.kamra-framed [data-kf="ask-foot"] button {
     border-left: 0;
     border-radius: 0;
   }
+  /* //// Neoffice — the head: its parts wrap on a phone */
   html.kamra-framed [data-kf="head"] {
     flex: none;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    row-gap: 12px;
     padding: var(--kf-pad) 64px 12px var(--kf-pad);
+  }
+  /* //// Neoffice — a head drawn by hand with a control beside the title (the booking's mode): the title takes the line. */
+  html.kamra-framed [data-kf="head"] > :first-child {
+    flex: 1 1 100%;
   }
   html.kamra-framed [data-kf="title"] {
     font-size: 22px;
@@ -657,8 +673,13 @@ html.kamra-framed [data-kf="ask-foot"] button {
   html.kamra-framed [data-kf="aside"][data-kf-aside="summary"] {
     display: none;
   }
+  /* //// Neoffice — a card with nothing left to show (a reading, its summary gone) leaves no empty band at the bottom. */
+  html.kamra-framed [data-kf="rail"]:not(:has([data-kf="foot"])):has(> [data-kf-aside="summary"]) {
+    display: none;
+  }
+  /* //// Neoffice — a card of the drawer's own (the booking's quote) keeps a fifth of the screen: the form has the rest. */
   html.kamra-framed [data-kf="aside"] {
-    max-height: 30vh;
+    max-height: 20vh;
   }
   html.kamra-framed [data-kf="aside"] > :first-child {
     margin-right: 0;
