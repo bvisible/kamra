@@ -530,7 +530,9 @@ def room_insights(property: str, days: int = 30, refresh: int = 0,
 			frappe.throw(f"Pick a range of 1 to {max(INSIGHT_WINDOWS)} days.")
 		today = str(add_days(to_date, 1))
 	key = f"kamra_room_insights:{property}:{days}:{today}:{int(money)}"
-	cached = None if cint(refresh) else frappe.cache().get_value(key)
+	# //// Neoffice: Frappe 15 keeps a missing key (None) in frappe.local.cache and a write with a lifetime does not
+	# update it, so a counter or cache read before its first write stays empty in the same process: expires=True reads Redis.
+	cached = None if cint(refresh) else frappe.cache().get_value(key, expires=True)
 	if cached:
 		return cached
 	# a picked range counts cleans up to its last day; presets include today's

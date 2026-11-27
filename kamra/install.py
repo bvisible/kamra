@@ -21,6 +21,8 @@ def after_install():
 	ensure_mcp_roles()
 	ensure_user_fields()
 	ensure_role_profiles()
+	from kamra.compat_v15 import seed_grants  # //// Neoffice: Frappe 15 (compat_v15.py)
+	seed_grants()
 
 
 def after_migrate():
@@ -34,6 +36,8 @@ def after_migrate():
 	ensure_user_fields()
 	sync_permission_types()
 	ensure_role_profiles()
+	from kamra.compat_v15 import seed_grants  # //// Neoffice: Frappe 15 (compat_v15.py)
+	seed_grants()
 
 
 def ensure_user_fields():
@@ -162,16 +166,18 @@ def sync_permission_types():
 	once per Permission Type; what the site changes afterwards is theirs."""
 	import json
 
+	from kamra import compat_v15  # //// Neoffice: Frappe 15 has no Permission Type doctype (compat_v15.py)
 	done = set(json.loads(frappe.db.get_default(SYNCED_PTYPES) or "[]"))
 	ours = set(frappe.get_all("DocType", filters={"module": "Kamra"}, pluck="name"))
 	customised = set(frappe.get_all("Custom DocPerm", pluck="parent", distinct=True))
 	changed = False
-	for pt in frappe.get_all("Permission Type", fields=["name", "doc_type", "perm_type"]):
+	# //// Neoffice: Permission Type records and their grants come from compat_v15 (the JSON files on Frappe 15)
+	for pt in compat_v15.permission_types():
 		if pt.name in done or pt.doc_type not in ours:
 			continue
 		if pt.doc_type in customised:
-			for role in frappe.get_all("DocPerm", pluck="role", filters={
-					"parent": pt.doc_type, "permlevel": 0, pt.perm_type: 1}):
+			# //// Neoffice: Permission Type records and their grants come from compat_v15 (the JSON files on Frappe 15)
+			for role in compat_v15.granted_roles(pt):
 				row = frappe.db.get_value("Custom DocPerm", {
 					"parent": pt.doc_type, "role": role, "permlevel": 0, "if_owner": 0})
 				if row:

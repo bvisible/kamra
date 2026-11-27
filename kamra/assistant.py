@@ -957,10 +957,12 @@ def _tool_allowed(name: str) -> bool:
 	"""RBAC for Kamra Agent: a tool is only visible/callable when the
 	signed-in user's roles pass the SAME gate as the underlying API
 	endpoint. The model never even sees tools this user couldn't use."""
+	from kamra.compat_v15 import has_permission as compat_has_permission  # //// Neoffice: Frappe 15 custom rights
 	fn = _resolve(TOOLS[name][0])
 	perm = getattr(fn, "_kamra_perm", None)
 	if perm:
-		return frappe.has_permission(*perm, ignore_share_permissions=True)
+		# //// Neoffice: compat_has_permission answers Kamra's custom rights on Frappe 15 (compat_v15.py)
+		return compat_has_permission(*perm, ignore_share_permissions=True)
 	allowed = getattr(fn, "_kamra_roles", None)
 	if not allowed:
 		return True

@@ -1,3 +1,5 @@
+from kamra.compat_v15 import keep_empty_times  # //// Neoffice: Frappe 15 fills empty Time fields (compat_v15.py)
+keep_empty_times()
 app_name = "kamra"
 app_title = "Kamra"
 app_publisher = "HeyKoala"
@@ -225,7 +227,9 @@ website_redirects = [
 # Installation
 # ------------
 
-# before_install = "kamra.install.before_install"
+# //// Neoffice: Frappe 15 custom-right columns (compat_v15.py)
+before_install = "kamra.compat_v15.ensure_columns"
+before_migrate = ["kamra.compat_v15.ensure_columns"]
 after_install = "kamra.install.after_install"
 after_migrate = ["kamra.install.after_migrate"]
 

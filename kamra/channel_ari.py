@@ -371,11 +371,14 @@ def _hold(conn, kind: str, rows: list, now: float) -> int:
 	"""Seconds this kind has to wait before a call: a pause (429 or a spent
 	RateLimit header), the local cap of calls per minute, or - restrictions
 	only - the batch window that lets a few edits in a row go together."""
-	until = frappe.cache.get_value(_ARI_PAUSE.format(connection=conn.name, kind=kind))
+	# //// Neoffice: Frappe 15 keeps a missing key (None) in frappe.local.cache and a write with a lifetime does not
+	# update it, so a counter or cache read before its first write stays empty in the same process: expires=True reads Redis.
+	until = frappe.cache.get_value(_ARI_PAUSE.format(connection=conn.name, kind=kind), expires=True)
 	if until and float(until) > now:
 		return max(1, math.ceil(float(until) - now))
 	calls = sorted(t for t in (frappe.cache.get_value(
-		_ARI_CALLS.format(connection=conn.name, kind=kind)) or []) if t > now - 60)
+		# //// Neoffice: expires=True, as above (Frappe 15 cache read, compat_v15.py)
+		_ARI_CALLS.format(connection=conn.name, kind=kind), expires=True) or []) if t > now - 60)
 	if len(calls) >= int(conn.ari_calls_per_minute or 10):
 		return max(1, math.ceil(calls[0] + 60 - now))
 	batch = int(conn.ari_batch_seconds or 0)
@@ -388,7 +391,8 @@ def _hold(conn, kind: str, rows: list, now: float) -> int:
 
 def _count_call(connection: str, kind: str, now: float) -> None:
 	key = _ARI_CALLS.format(connection=connection, kind=kind)
-	calls = [t for t in (frappe.cache.get_value(key) or []) if t > now - 60] + [now]
+	# //// Neoffice: expires=True, as above (Frappe 15 cache read, compat_v15.py)
+	calls = [t for t in (frappe.cache.get_value(key, expires=True) or []) if t > now - 60] + [now]
 	frappe.cache.set_value(key, calls, expires_in_sec=120)
 
 
@@ -402,7 +406,8 @@ def _pause(connection: str, kind: str, seconds: int, now: float) -> int:
 def _ari_error(conn, exc: Exception) -> None:
 	"""Channex unreachable (5xx, network, timeout): one Error Log an hour."""
 	key = _ARI_ERROR.format(connection=conn.name)
-	if frappe.cache.get_value(key):
+	# //// Neoffice: expires=True, as above (Frappe 15 cache read, compat_v15.py)
+	if frappe.cache.get_value(key, expires=True):
 		return
 	frappe.cache.set_value(key, 1, expires_in_sec=3600)
 	frappe.log_error(title=f"Channex ARI {conn.name}", message=f"{type(exc).__name__}: {exc}"[:1000])
@@ -777,7 +782,8 @@ def outbox_status(connection: str) -> dict:
 	now = _now()
 	paused = {}
 	for kind in KINDS:
-		until = frappe.cache.get_value(_ARI_PAUSE.format(connection=connection, kind=kind))
+		# //// Neoffice: expires=True, as above (Frappe 15 cache read, compat_v15.py)
+		until = frappe.cache.get_value(_ARI_PAUSE.format(connection=connection, kind=kind), expires=True)
 		if until and float(until) > now:
 			paused[kind] = math.ceil(float(until) - now)
 	count = lambda status: frappe.db.count("Channel ARI Outbox", {"connection": connection, "status": status})  # noqa: E731

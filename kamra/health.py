@@ -55,7 +55,9 @@ def _cmp_semver(a: str, b: str) -> int | None:
 
 
 def _fetch_github_latest() -> dict:
-	cached = frappe.cache.get_value(CACHE_KEY)
+	# //// Neoffice: Frappe 15 keeps a missing key (None) in frappe.local.cache and a write with a lifetime does not
+	# update it, so a counter or cache read before its first write stays empty in the same process: expires=True reads Redis.
+	cached = frappe.cache.get_value(CACHE_KEY, expires=True)
 	if isinstance(cached, dict):
 		return cached
 
@@ -159,9 +161,10 @@ def _database_check() -> dict:
 def _frappe_check() -> dict:
 	ver = getattr(frappe, "__version__", None) or "unknown"
 	major = int(str(ver).split(".")[0]) if str(ver)[0:1].isdigit() else 0
-	if major and major < 16:
+	# //// Neoffice: Frappe 15 is supported through kamra/compat_v15.py (remove with it when the fleet runs Frappe 16)
+	if major and major < 15:
 		status = "attention"
-		detail = f"Frappe {ver} — Kamra targets Frappe v16."
+		detail = f"Frappe {ver} — Kamra needs Frappe v15 or newer."
 	else:
 		status = "passed"
 		detail = f"Frappe {ver}."

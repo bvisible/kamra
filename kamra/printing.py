@@ -402,6 +402,8 @@ def printers(property: str) -> list:
 		fields=["name", "printer_name", "connection", "paper_width", "copies", "ip_address",
 		        "port", "fallback_printer", "disabled", "prints_kots", "prints_bills", "last_seen", "last_printed", "last_error"],
 		order_by="printer_name")
+	from kamra.compat_v15 import restore_field  # //// Neoffice: Frappe 15 drops fields named *_seen (compat_v15.py)
+	rows = restore_field(rows, "Kitchen Printer", "last_seen")
 	routes = frappe.get_all(
 		"Kitchen Printer Route", filters={"parent": ["in", [r.name for r in rows] or [""]],
 		                                  "parenttype": "Kitchen Printer"},

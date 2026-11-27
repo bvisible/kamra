@@ -1197,8 +1197,9 @@ def list_sops(property: str):
 		"SOP Template",
 		filters={"property": property},
 		fields=["name", "key", "title", "active", "modified"],
-		order_by="key asc",
 	)
+	# //// Neoffice: sorted here, Frappe 15 does not quote a reserved word (`key`) in order_by
+	rows.sort(key=lambda r: (r.key or "").lower())
 	return rows
 
 

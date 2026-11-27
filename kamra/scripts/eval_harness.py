@@ -4566,7 +4566,8 @@ def t95():
 	row = next(c.name for c in frappe.get_doc("Folio", folio).charges
 	           if c.description == "eval wrong line")
 	orig = frappe.db.get_value("Folio Ledger Entry", {
-		"source_name": row, "reversal_of": ["in", ["", None]]}, "name")
+		# //// Neoffice: Frappe 15 does not match NULL with ["in", ["", None]] (compat_v15.py)
+		"source_name": row, "reversal_of": ["is", "not set"]}, "name")
 	assert orig, "the charge left no ledger entry to reverse"
 	from kamra.authz import act_as
 	pin_before = frappe.db.get_value("Property", P, "require_cashier_pin")

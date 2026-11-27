@@ -729,7 +729,8 @@ class TestBanquetOps(BanquetTestCase):
 			with self.assertRaisesRegex(frappe.ValidationError, "Only 1"):
 				bq.set_status(two, "Confirmed")
 			cal = ops.equipment_calendar(self.f["property"],
-			                             start_date=self.sheet(one).event_date, days=1)
+			                             # //// Neoffice: a string, the way the SPA sends it (a date is refused by the typed signature on our Frappe fork)
+			                             start_date=str(self.sheet(one).event_date), days=1)
 			led = next(r for r in cal["items"] if r["item"] == self.f["led"])
 			cell = led["days"][0]
 			self.assertEqual((cell["confirmed"], cell["tentative"], cell["over"]),

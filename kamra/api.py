@@ -87,8 +87,9 @@ def my_permissions() -> dict:
 	out = {}
 	for dt in frappe.get_all("DocType", filters={"module": "Kamra", "istable": 0}, pluck="name"):
 		perms = get_role_permissions(frappe.get_meta(dt))
-		held = sorted(k for k, v in perms.items()
-		              if v == 1 and k not in ("has_if_owner_enabled", "if_owner"))
+		from kamra.compat_v15 import custom_rights  # //// Neoffice: Frappe 15 reports standard rights only (compat_v15.py)
+		held = sorted({k for k, v in perms.items()
+		               if v == 1 and k not in ("has_if_owner_enabled", "if_owner")} | custom_rights(frappe.get_meta(dt)))
 		if held:
 			out[dt] = held
 	return out
@@ -7027,6 +7028,7 @@ def correct_charged_nights(reservation: str, reason: str | None = None,
 	back-dated rates; needs a reason and the PIN of the Finance / Hotel
 	Admin user approving it (supervisor, default the caller). dry_run=1
 	lists the nights without changing anything. Not an agent tool."""
+	from kamra.compat_v15 import has_permission as compat_has_permission  # //// Neoffice: Frappe 15 custom rights
 	doc = frappe.get_doc("Reservation", reservation)
 	from kamra.crs import assert_property_access
 	assert_property_access(doc.property)
@@ -7052,7 +7054,8 @@ def correct_charged_nights(reservation: str, reason: str | None = None,
 	approver = verify_supervisor(doc.property, supervisor or frappe.session.user, pin)
 	# a folio correction: the approver must also hold Folio "correct_charges"
 	# (defaults Finance, Hotel Admin), whatever else a site lets approve
-	if not frappe.has_permission("Folio", "correct_charges", user=approver,
+	# //// Neoffice: compat_has_permission answers Kamra's custom rights on Frappe 15 (compat_v15.py)
+	if not compat_has_permission("Folio", "correct_charges", user=approver,
 	                             ignore_share_permissions=True):
 		frappe.throw(_("{0} cannot approve this. A rate correction needs a "
 		               "Finance or Hotel Admin user.").format(approver),

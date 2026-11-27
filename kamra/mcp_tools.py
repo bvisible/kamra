@@ -2752,12 +2752,14 @@ def tool_allowed(spec: ToolSpec, roles: set[str] | None = None) -> bool:
 	check on the endpoint's (doctype, permission type) - so Role Permission
 	Manager edits change the tool list too; for an explicit role set (tests,
 	previews), whether any of those roles holds that permission."""
+	from kamra.compat_v15 import has_permission as compat_has_permission  # //// Neoffice: Frappe 15 custom rights
 	fn = resolve_endpoint(spec.dotted)
 	perm = getattr(fn, "_kamra_perm", None)
 	if roles is None and perm:
 		import frappe
 
-		return frappe.has_permission(*perm, ignore_share_permissions=True)
+		# //// Neoffice: compat_has_permission answers Kamra's custom rights on Frappe 15 (compat_v15.py)
+		return compat_has_permission(*perm, ignore_share_permissions=True)
 	allowed = getattr(fn, "_kamra_roles", None)
 	if not allowed:
 		return True

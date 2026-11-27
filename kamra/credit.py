@@ -80,11 +80,13 @@ def _is_agent() -> bool:
 def can_override() -> bool:
 	"""May the person acting now override a credit block? Finance or a
 	Hotel Admin (System Manager / Administrator too), never an agent."""
+	from kamra.compat_v15 import has_permission as compat_has_permission  # //// Neoffice: Frappe 15 custom rights
 	if _is_agent():
 		return False
 	# Corporate Account: Override Credit in Role Permission Manager
 	# (defaults: OVERRIDE_ROLES)
-	return frappe.has_permission("Corporate Account", "override_credit",
+	# //// Neoffice: compat_has_permission answers Kamra's custom rights on Frappe 15 (compat_v15.py)
+	return compat_has_permission("Corporate Account", "override_credit",
 	                             ignore_share_permissions=True)
 
 

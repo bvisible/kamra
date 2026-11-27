@@ -560,7 +560,9 @@ def table_map(outlet: str):
 			# an empty table can still be reserved or waiting on a clean
 			state = ("reserved" if t in reserved
 			         else "cleaning"
-			         if frappe.cache.get_value(_cleaning_key(outlet, t))
+			         # //// Neoffice: Frappe 15 keeps a missing key (None) in frappe.local.cache and a write with a lifetime does not
+			         # update it, so a counter or cache read before its first write stays empty in the same process: expires=True reads Redis.
+			         if frappe.cache.get_value(_cleaning_key(outlet, t), expires=True)
 			         else "vacant")
 			return {**base, "state": state, "bills": 0, "orders": []}
 		states = [_order_state(o) for o in orders]
@@ -1022,6 +1024,8 @@ def kitchen_queue(property: str, outlet: str | None = None,
 		        "kot_status", "menu_item", "voided", "void_reason",
 		        "void_seen", "fired_at", "started_at", "prepared_at", "idx"],
 		order_by="idx asc")
+	from kamra.compat_v15 import restore_field  # //// Neoffice: Frappe 15 drops fields named *_seen (compat_v15.py)
+	rows = restore_field(rows, "POS Order Item", "void_seen")
 	menu = {
 		m.name: m for m in frappe.get_all(
 			"Menu Item", filters={"name": ["in", list({r.menu_item for r in rows})]},
@@ -1200,9 +1204,10 @@ def waiters(outlet: str):
 def outlet_waiters(outlet: str):
 	"""The outlet's waiter list (active and not), and whether this user
 	may change it."""
+	from kamra.compat_v15 import has_permission as compat_has_permission  # //// Neoffice: Frappe 15 custom rights
 	rows = frappe.get_all("POS Outlet Waiter", filters={"parent": outlet, "parenttype": "POS Outlet"},
 	                      fields=["waiter_name", "active"], order_by="idx")
-	can_edit = frappe.has_permission(*save_outlet_waiter._kamra_perm,
+	can_edit = compat_has_permission(*save_outlet_waiter._kamra_perm,
 	                                 ignore_share_permissions=True)
 	return {"waiters": [{"waiter_name": r.waiter_name, "active": cint(r.active)} for r in rows],
 	        "can_edit": can_edit}

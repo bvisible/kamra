@@ -333,7 +333,8 @@ def _original_charge_entry(folio: str, charge_row_name: str):
 	return frappe.db.get_value(
 		"Folio Ledger Entry",
 		{"source_doctype": "Folio Charge", "source_name": charge_row_name,
-		 "folio": folio, "reversal_of": ["in", ["", None]]},
+		 # //// Neoffice: Frappe 15 does not match NULL with ["in", ["", None]] (compat_v15.py)
+		 "folio": folio, "reversal_of": ["is", "not set"]},
 		["name", "debit", "credit", "transaction_code", "description", "ledger"],
 		as_dict=True,
 	)
@@ -2260,7 +2261,9 @@ def _fetch_rates(property: str, only_missing: bool = False) -> dict:
 	skip_key = f"kamra:fx_not_offered:{property}:{bd}"
 	source = _rates_source(property)
 	if only_missing:
-		skipped = set(frappe.cache.get_value(skip_key) or ())
+		# //// Neoffice: Frappe 15 keeps a missing key (None) in frappe.local.cache and a write with a lifetime does not
+		# update it, so a counter or cache read before its first write stays empty in the same process: expires=True reads Redis.
+		skipped = set(frappe.cache.get_value(skip_key, expires=True) or ())
 		wanted = [c for c in wanted if c not in existing and c not in skipped]
 		if not wanted:
 			return out
@@ -2319,7 +2322,8 @@ def _market_rates_hourly(home: str, source: Callable[[str], tuple[dict, str | No
 	home currency an hour, however many properties share it (the provider
 	asks for no more than about hourly). A failure is not cached."""
 	key = f"kamra:fx_market:{source.__module__}:{home}"
-	hit = frappe.cache.get_value(key)
+	# //// Neoffice: expires=True, as above (Frappe 15 cache read, compat_v15.py)
+	hit = frappe.cache.get_value(key, expires=True)
 	if hit:
 		return hit[0], hit[1]
 	mids, as_of = source(home)

@@ -173,7 +173,8 @@ def comparison(property: str, date: str, total_rooms: int, forecast: list[dict])
 
 def sees_figures() -> bool:
 	"""Property "view_flash" (defaults FIGURE_ROLES), as the flash itself."""
-	return frappe.has_permission("Property", "view_flash", ignore_share_permissions=True)
+	from kamra.compat_v15 import has_permission as compat_has_permission  # //// Neoffice: Frappe 15 custom rights
+	return compat_has_permission("Property", "view_flash", ignore_share_permissions=True)
 
 
 def _open_folio_totals(property: str) -> tuple[float, int]:
@@ -334,6 +335,7 @@ def owner_snapshot(property: str, date: str | None = None, from_date: str | None
 	the last few night audits. Read only; the same figures as the flash and
 	the ledgers. `period` (today, yesterday, month) counts from the
 	property's business date, never the phone's clock."""
+	from kamra.compat_v15 import has_permission as compat_has_permission  # //// Neoffice: Frappe 15 custom rights
 	from inspect import unwrap
 
 	from kamra.business_date import get_business_date
@@ -352,7 +354,8 @@ def owner_snapshot(property: str, date: str | None = None, from_date: str | None
 	flash = unwrap(manager_flash)(property, str(date), from_date)
 	outstanding, open_folios = _open_folio_totals(property)
 	ar = unwrap(city_ledger_aging)(property)["totals"]
-	sees_audits = frappe.has_permission(*night_audit_history._kamra_perm,
+	# //// Neoffice: compat_has_permission answers Kamra's custom rights on Frappe 15 (compat_v15.py)
+	sees_audits = compat_has_permission(*night_audit_history._kamra_perm,
 	                                    ignore_share_permissions=True)
 	return {
 		**flash,

@@ -145,7 +145,8 @@ class HealthTestCase(AuditTestCase):
 		self.assertIn("kamra", c["detail"])
 
 	def test_frappe_check_flags_an_old_major(self):
-		with patch.object(frappe, "__version__", "15.2.0"):
+		# //// Neoffice: 14, not 15 (Frappe 15 is supported, compat_v15.py)
+		with patch.object(frappe, "__version__", "14.2.0"):
 			self.assertEqual(health._frappe_check()["status"], "attention")
 
 	def test_timezone_check_is_structured(self):

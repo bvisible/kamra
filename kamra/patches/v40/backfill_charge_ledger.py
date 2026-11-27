@@ -91,7 +91,8 @@ def _original(folio, source_name):
 	return frappe.db.get_value(
 		"Folio Ledger Entry",
 		{"source_doctype": "Folio Charge", "source_name": source_name,
-		 "folio": folio, "reversal_of": ["in", ["", None]]},
+		 # //// Neoffice: Frappe 15 does not match NULL with ["in", ["", None]] (compat_v15.py)
+		 "folio": folio, "reversal_of": ["is", "not set"]},
 		["name", "property", "ledger", "transaction_code", "description",
 		 "business_date"],
 		as_dict=True, order_by="posted_at asc")

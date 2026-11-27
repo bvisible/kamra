@@ -410,7 +410,8 @@ def require_perm(doctype: str, ptype: str, scope: dict | None = None):
 	def deco(fn):
 		@wraps(fn)
 		def guarded(*args, **kwargs):
-			if not frappe.has_permission(doctype, ptype,
+			from kamra.compat_v15 import has_permission as compat_has_permission  # //// Neoffice: Frappe 15 custom rights
+			if not compat_has_permission(doctype, ptype,
 			                             ignore_share_permissions=True):
 				# every role that holds it; IT always may, so it isn't listed
 				shown = sorted(perm_roles(doctype, ptype) - set(IT_ADMIN))
@@ -497,7 +498,9 @@ def require_cashier_pin(property: str, pin=None):
 
 	# Sliding unlock window (set after a successful PinPad entry)
 	cache_key = f"kamra_cashier_unlock:{user}"
-	if frappe.cache.get_value(cache_key):
+	# //// Neoffice: Frappe 15 keeps a missing key (None) in frappe.local.cache and a write with a lifetime does not
+	# update it, so a counter or cache read before its first write stays empty in the same process: expires=True reads Redis.
+	if frappe.cache.get_value(cache_key, expires=True):
 		# refresh sliding window
 		frappe.cache.set_value(cache_key, 1, expires_in_sec=lock_minutes * 60)
 		return
@@ -525,6 +528,7 @@ def supervisor_roles(perm=APPROVE) -> list[str]:
 
 
 def is_supervisor(user: str | None = None, perm=APPROVE) -> bool:
+	from kamra.compat_v15 import has_permission as compat_has_permission  # //// Neoffice: Frappe 15 custom rights
 	user = user or frappe.session.user
 	if user == "Administrator":
 		return True
@@ -534,7 +538,8 @@ def is_supervisor(user: str | None = None, perm=APPROVE) -> bool:
 	# supervisor's account keeps that account's rights, as before)
 	if "Kamra Agent" in roles and not roles & _HUMAN_SUPERVISOR:
 		return False
-	return frappe.has_permission(*perm, user=user, ignore_share_permissions=True)
+	# //// Neoffice: compat_has_permission answers Kamra's custom rights on Frappe 15 (compat_v15.py)
+	return compat_has_permission(*perm, user=user, ignore_share_permissions=True)
 
 
 def supervisors_for(property: str, perm=APPROVE, roles=None) -> list[dict]:
@@ -591,13 +596,15 @@ def verify_supervisor(property: str, supervisor: str | None, pin,
 	# cache, which a rollback does not touch.
 	max_attempts, lock_minutes = _pin_policy(property)
 	fails_key = f"kamra_supervisor_pin_fails:{supervisor}"
-	if cint(frappe.cache.get_value(fails_key)) >= max_attempts:
+	# //// Neoffice: expires=True, as above (Frappe 15 cache read, compat_v15.py)
+	if cint(frappe.cache.get_value(fails_key, expires=True)) >= max_attempts:
 		frappe.throw("PIN_LOCKED: too many wrong supervisor PIN attempts - "
 		             f"try again in {lock_minutes} minutes.")
 	try:
 		_check_user_pin(supervisor, pin, property)
 	except frappe.ValidationError:
-		frappe.cache.set_value(fails_key, cint(frappe.cache.get_value(fails_key)) + 1,
+		# //// Neoffice: expires=True, as above (Frappe 15 cache read, compat_v15.py)
+		frappe.cache.set_value(fails_key, cint(frappe.cache.get_value(fails_key, expires=True)) + 1,
 		                       expires_in_sec=lock_minutes * 60)
 		raise
 	frappe.cache.delete_value(fails_key)
@@ -659,7 +666,8 @@ def cashier_unlock_status(property: str) -> dict:
 		doc = frappe.get_doc("Cashier PIN", user)
 		must_reset = bool(doc.get("must_reset"))
 		locked = _pin_locked(doc)
-	unlocked = bool(frappe.cache.get_value(f"kamra_cashier_unlock:{user}"))
+	# //// Neoffice: expires=True, as above (Frappe 15 cache read, compat_v15.py)
+	unlocked = bool(frappe.cache.get_value(f"kamra_cashier_unlock:{user}", expires=True))
 	return {
 		"required": required,
 		"has_pin": has_pin,
