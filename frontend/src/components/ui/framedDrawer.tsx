@@ -176,7 +176,12 @@ export function useFramedDrawer(opts: { onClose: () => void }) {
 export function FramedLeaveQuestion(props: { title?: string; onKeep: () => void; onDiscard: () => void }) {
   const box = useRef<HTMLDivElement>(null)
   useEffect(() => {
+    // Back to the work: the field one was typing in gets the focus again (it is gone when the window closes).
+    const before = document.activeElement instanceof HTMLElement ? document.activeElement : null
     box.current?.focus({ preventScroll: true })
+    return () => {
+      if (before && before.isConnected) before.focus({ preventScroll: true })
+    }
   }, [])
   return (
     <div data-kf="ask-layer">
