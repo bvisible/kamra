@@ -126,8 +126,9 @@ function FramedSheet(props: SheetProps) {
         </div>
         <div data-kf="rail">
           <div data-kf="aside" data-kf-aside={props.aside ? "own" : "summary"}>
-            {/* //// Neoffice — the summary names what was typed; the head's line is not repeated in it */}
-            {props.aside ?? <FramedSummary title={props.title} body={body} />}
+            {/* //// Neoffice — the summary names what was typed; the head's line is not repeated in it; a reading (no
+                foot) lists only what the person filled, not the defaults of the small forms it holds */}
+            {props.aside ?? <FramedSummary title={props.title} body={body} onlyChanged={!props.footer} />}
           </div>
           {props.footer ? <div data-kf="foot">{props.footer}</div> : null}
         </div>

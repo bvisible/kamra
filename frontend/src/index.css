@@ -559,6 +559,10 @@ html.kamra-framed [data-kf="foot"] :is(button, a) {
   justify-content: center;
   text-align: center;
 }
+/* //// Neoffice — a disabled ink action in dark: the light ink at half strength still read as ready (tester, 27.11). */
+html.kamra-framed.dark [data-kf] button[data-variant="primary"]:disabled {
+  opacity: 0.35;
+}
 /* The key of a button, after its label (the desk's .neo-kbd). */
 html.kamra-framed [data-kf-key]::after {
   content: attr(data-kf-key);

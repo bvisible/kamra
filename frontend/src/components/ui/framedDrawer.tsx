@@ -35,16 +35,40 @@ function visible(el: Element): boolean {
   return r.width > 0 && r.height > 0
 }
 
+/** The elements of this drawer, not of a drawer opened over it (a check-in opened from the booking). */
+function own<T extends Element>(root: Element, selector: string): T[] {
+  return Array.from(root.querySelectorAll<T>(selector)).filter((x) => x.closest("[data-kf='sheet']") === root)
+}
+
 /** The ink action of a foot: the last visible ink button, enabled or not (its key is shown either way). */
-function inkOf(scope: Element | null): HTMLButtonElement | null {
-  if (!scope) return null
-  const all = Array.from(scope.querySelectorAll<HTMLButtonElement>("[data-kf='foot'] button[data-variant='primary']"))
-  const shown = all.filter(visible)
+function inkOf(root: Element | null): HTMLButtonElement | null {
+  if (!root) return null
+  const shown = own<HTMLButtonElement>(root, "[data-kf='foot'] button[data-variant='primary']").filter(visible)
   return shown.length ? shown[shown.length - 1] : null
 }
 
+/** What a field holds, to tell typed work from a field typed then erased (spaces are nothing). */
+function fieldValue(el: Element): string {
+  if (el instanceof HTMLInputElement && (el.type === "checkbox" || el.type === "radio")) return el.checked ? "1" : ""
+  if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement)
+    return el.value.trim()
+  if (el instanceof HTMLElement && el.isContentEditable) return (el.textContent || "").trim()
+  return ""
+}
+
+/** The first field of the form, or the window itself when it is a reading: never a button. */
+function focusFirst(root: Element) {
+  const body = own<HTMLElement>(root, "[data-kf='body']")[0]
+  const field = body
+    ? Array.from(body.querySelectorAll<HTMLElement>(FIRST_FIELD))
+        .filter((f) => f.closest("[data-kf='sheet']") === root)
+        .find(visible)
+    : null
+  ;(field || own<HTMLElement>(root, "[data-kf='panel']")[0])?.focus({ preventScroll: true })
+}
+
 function showKeys(root: Element) {
-  const foot = root.querySelector("[data-kf='foot']")
+  const foot = own(root, "[data-kf='foot']")[0]
   if (!foot) return
   const ink = inkOf(root)
   const out = new Set([translate("Cancel"), translate("Close")])
@@ -90,21 +114,32 @@ export function useFramedDrawer(opts: { onClose: () => void }) {
   const [asking, setAsking] = useState(false)
   const askingRef = useRef(false)
   askingRef.current = asking
-  const dirty = useRef(false)
+  // The work: each field the person changed, with what it held when they came to it and what it holds now (a field gone
+  // from the screen, a wizard's past step, keeps its last value). A field typed then erased is no work.
+  const work = useRef({ first: new Map<Element, string>(), last: new Map<Element, string>() })
+  const dirty = useCallback(() => {
+    const { first, last } = work.current
+    for (const [field, before] of first) {
+      if (!last.has(field)) continue
+      if ((field.isConnected ? fieldValue(field) : last.get(field)) !== before) return true
+    }
+    return false
+  }, [])
   const closeRef = useRef(opts.onClose)
   closeRef.current = opts.onClose
 
   const attemptClose = useCallback(() => {
-    if (framed && dirty.current) setAsking(true)
+    if (framed && dirty()) setAsking(true)
     else closeRef.current()
-  }, [framed])
+  }, [framed, dirty])
   const keep = useCallback(() => setAsking(false), [])
   const discard = useCallback(() => {
     setAsking(false)
     closeRef.current()
   }, [])
   const clean = useCallback(() => {
-    dirty.current = false
+    work.current.first.clear()
+    work.current.last.clear()
   }, [])
 
   useEffect(() => {
@@ -114,20 +149,47 @@ export function useFramedDrawer(opts: { onClose: () => void }) {
     const id = ++seq
     stack.push(id)
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    // Typing starts the work: a field that changed, inside the window, outside what it marks as not work (a search).
-    const mark = (e: Event) => {
-      const target = e.target as Element | null
-      if (target && target.closest && target.closest("[data-kf='panel']") && !target.closest("[data-kf-skip]"))
-        dirty.current = true
+    // A field of the work: inside this window, outside what it marks as not work (a search).
+    const isWork = (t: Element | null): t is Element =>
+      !!t && !!t.closest && t.closest("[data-kf='sheet']") === el && !!t.closest("[data-kf='panel']") && !t.closest("[data-kf-skip]")
+    // What a field held when the person came to it (before typing), then what it holds after each change.
+    const onFocusIn = (e: FocusEvent) => {
+      const t = e.target as Element | null
+      if (isWork(t) && !work.current.first.has(t)) work.current.first.set(t, fieldValue(t))
     }
+    const mark = (e: Event) => {
+      const t = e.target as Element | null
+      if (!isWork(t)) return
+      if (!work.current.first.has(t)) work.current.first.set(t, "")
+      work.current.last.set(t, fieldValue(t))
+    }
+    el.addEventListener("focusin", onFocusIn, true)
     el.addEventListener("input", mark, true)
     el.addEventListener("change", mark, true)
-    // The first field of the form, or the window itself when it is a reading: never a button.
-    const focusFirst = window.setTimeout(() => {
-      const body = el.querySelector("[data-kf='body']")
-      const field = body ? Array.from(body.querySelectorAll<HTMLElement>(FIRST_FIELD)).find(visible) : null
+    // « Annuler » shows Esc: it asks first, as Escape does, once something was typed.
+    const onCancel = (e: MouseEvent) => {
+      const b = (e.target as Element | null)?.closest?.("[data-kf='foot'] button[data-kf-key='Esc']")
+      if (!b || b.closest("[data-kf='sheet']") !== el || !dirty()) return
+      e.preventDefault()
+      e.stopPropagation()
+      setAsking(true)
+    }
+    el.addEventListener("click", onCancel, true)
+    // The field that had the focus went away (a wizard's next step): the focus goes to the new step's first field,
+    // not to the page behind.
+    const onFocusOut = (e: FocusEvent) => {
+      const t = e.target as Element | null
+      window.setTimeout(() => {
+        if (stack[stack.length - 1] !== id || !t || t.isConnected || askingRef.current) return
+        const active = document.activeElement
+        if (active && active !== document.body) return
+        focusFirst(el)
+      }, 0)
+    }
+    el.addEventListener("focusout", onFocusOut, true)
+    const firstFocus = window.setTimeout(() => {
       if (el.contains(document.activeElement) && document.activeElement !== document.body) return
-      ;(field || el.querySelector<HTMLElement>("[data-kf='panel']"))?.focus({ preventScroll: true })
+      focusFirst(el)
     }, 80)
     const onKey = (e: KeyboardEvent) => {
       if (stack[stack.length - 1] !== id || e.defaultPrevented) return
@@ -154,15 +216,18 @@ export function useFramedDrawer(opts: { onClose: () => void }) {
     }
     document.addEventListener("keydown", onKey)
     return () => {
-      window.clearTimeout(focusFirst)
+      window.clearTimeout(firstFocus)
       document.removeEventListener("keydown", onKey)
+      el.removeEventListener("focusin", onFocusIn, true)
       el.removeEventListener("input", mark, true)
       el.removeEventListener("change", mark, true)
+      el.removeEventListener("click", onCancel, true)
+      el.removeEventListener("focusout", onFocusOut, true)
       const at = stack.indexOf(id)
       if (at >= 0) stack.splice(at, 1)
       if (opener && document.contains(opener)) opener.focus({ preventScroll: true })
     }
-  }, [framed, attemptClose, discard])
+  }, [framed, attemptClose, discard, dirty])
 
   // The keys on the foot, after each render: a busy label (« Enregistrement… ») rewrites the button.
   useLayoutEffect(() => {
@@ -292,12 +357,13 @@ function rowOf(el: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): 
 
 /** What the form holds now, field by field, in the order of the screen; a field gone from it (a wizard's past step)
  *  keeps its value and comes first. */
-function readFields(body: Element, known: Map<string, Row>): Row[] {
+function readFields(body: Element, known: Map<string, Row>, keep?: (el: Element) => boolean): Row[] {
   const here = new Map<string, Row>()
   const emptied = new Set<string>()
   body.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea").forEach((el) => {
     if (el instanceof HTMLInputElement && SKIP_TYPES.has(el.type)) return
     if (el.closest("table, [data-kf-skip]") || !visible(el)) return
+    if (keep && !keep(el)) return
     const row = rowOf(el)
     if (row === undefined) return
     if (row === null) emptied.add(labelOf(el))
@@ -310,19 +376,33 @@ function readFields(body: Element, known: Map<string, Row>): Row[] {
 }
 
 /** The card of a drawer that has none of its own (the desk's « what will be created »): the first name typed, else the
- *  window's title, quiet; the line it is given; then the fields filled so far. */
-export function FramedSummary(props: { title: string; description?: string; body: RefObject<HTMLElement | null> }) {
+ *  window's title, quiet; the line it is given; then the fields filled so far. A reading (`onlyChanged`: a drawer with
+ *  no foot) lists only what the person filled in it, not the defaults of the small forms it holds. */
+export function FramedSummary(props: {
+  title: string
+  description?: string
+  body: RefObject<HTMLElement | null>
+  onlyChanged?: boolean
+}) {
   const [rows, setRows] = useState<Row[]>([])
   const known = useRef(new Map<string, Row>())
+  const touched = useRef(new WeakSet<Element>())
+  const onlyChanged = !!props.onlyChanged
   useEffect(() => {
     const body = props.body.current
     if (!body) return
     let frame = 0
     let last = ""
+    const keep = onlyChanged ? (el: Element) => touched.current.has(el) : undefined
+    const touch = (e: Event) => {
+      if (e.target instanceof Element) touched.current.add(e.target)
+    }
+    body.addEventListener("input", touch, true)
+    body.addEventListener("change", touch, true)
     const read = () => {
       cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => {
-        const next = readFields(body, known.current)
+        const next = readFields(body, known.current, keep)
         const key = JSON.stringify(next)
         if (key !== last) {
           last = key
@@ -341,9 +421,11 @@ export function FramedSummary(props: { title: string; description?: string; body
       window.clearTimeout(later)
       body.removeEventListener("input", read, true)
       body.removeEventListener("change", read, true)
+      body.removeEventListener("input", touch, true)
+      body.removeEventListener("change", touch, true)
       watch.disconnect()
     }
-  }, [props.body])
+  }, [props.body, onlyChanged])
   const name = rows.find((r) => r.named)
   const rest = rows.filter((r) => r !== name)
   return (
