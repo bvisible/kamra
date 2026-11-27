@@ -135,22 +135,11 @@ website_route_rules = [
 	{"from_route": "/kamra/<path:app_path>", "to_route": "kamra"},
 ]
 
-# Clean, shareable guest URLs redirect into the SPA's routes.
-website_redirects = [
-	{"source": r"/book$", "target": "/kamra/book"},
-	{"source": r"/book/(.*)", "target": r"/kamra/book/\1"},
-	{"source": r"/stay$", "target": "/kamra/stay"},
-	{"source": r"/stay/(.*)", "target": r"/kamra/stay/\1"},
-	{"source": r"/hk$", "target": "/kamra/hk"},
-	{"source": r"/checkin/(.*)", "target": r"/kamra/checkin/\1"},
-	# Frappe password-reset emails land on /update-password?key=… — keep the key
-	# and show Kamra's own set-password screen instead of Desk's HTML form.
-	{
-		"source": r"/update-password$",
-		"target": "/kamra/update-password",
-		"forward_query_parameters": True,
-	},
-]
+# //// Neoffice: no redirect. Kamra is installed on every Neoffice instance and these rules would send /book, /stay,
+# //// /hk, /checkin/... and Frappe's own /update-password (the password-reset link) into /kamra, which a site where
+# //// hotel use is switched off refuses: a customer's own /book page and every password reset would break.
+# //// The guest pages stay reachable under /kamra/book, /kamra/stay, /kamra/hk and /kamra/checkin/...
+website_redirects = []
 
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [

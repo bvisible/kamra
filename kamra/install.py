@@ -13,9 +13,9 @@ STAFF_ROLES = ("Housekeeping Supervisor", "Night Auditor", "F&B Manager",
 
 
 def after_install():
-	from kamra.setup_guard import close_frappe_setup_wizard
-	close_frappe_setup_wizard()
-	set_site_home_and_favicon()
+	# //// Neoffice: Kamra is installed on every instance, switched off. It must not close Frappe's setup wizard, point the
+	# //// site's home page at /kamra or replace its favicon (close_frappe_setup_wizard, set_site_home_and_favicon): a new
+	# //// instance would skip its first-run setup and every customer's website home would change.
 	ensure_agent_identity()
 	ensure_staff_roles()
 	ensure_mcp_roles()
@@ -26,9 +26,7 @@ def after_install():
 
 
 def after_migrate():
-	# Frappe's wizard stays shut on sites made before this existed too
-	from kamra.setup_guard import close_frappe_setup_wizard
-	close_frappe_setup_wizard()
+	# //// Neoffice: the setup wizard is left as it is (see after_install)
 	# heals sites that were installed before the agent identity existed here
 	ensure_agent_identity()
 	ensure_staff_roles()
