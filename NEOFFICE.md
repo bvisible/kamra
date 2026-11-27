@@ -32,6 +32,13 @@ Every change carries a `//// Neoffice` comment with its reason: `grep -rn "////"
   `catalog.csv` are translated with the vocabulary of the Neoffice hotel space (folio = « note de client », night audit =
   « clôture du jour »). Inside the desk's frame, the application follows the desk's language (`deskLanguage` in
   `frontend/src/lib/dir.ts`, marked `//// Neoffice`). A new string of the catalogue needs its French entry in `fr.json`: `npm run i18n:coverage` lists the missing ones.
+- **The public booking page of a hotel outside India** (`kamra/public_api.py`, `frontend/src/screens/PublicBooking.tsx`,
+  `PublicListing.tsx`, `BookingEngine.tsx`, `components/BookingLinks.tsx`): no leftover security deposit of 5,000, the region
+  ("Lausanne, null"), the "Powered by Kamra" line removed (the name is reserved), the booking link under `/kamra/book` (a bare
+  `/book` is the Neoffice theme's page on an instance), one idempotency key per booking attempt (`lib/bookingAttempt.ts`), a
+  regional number locale and a currency symbol set apart from the figure, the real country in the structured data, and "Pay at
+  hotel" forced where the country has no payment gateway (the "Payments" screen offers nothing else and says why). Tests:
+  `kamra/tests/test_neoffice_public_booking.py`. Remove the payment rule the day a gateway exists for the country.
 - **The built SPA is committed** (`kamra/public/frontend`, as upstream does): after any change to `frontend/` or a merge,
   rebuild it (`cd frontend && npm ci && npm run build`) and commit the result; never rebuild it on an instance.
 

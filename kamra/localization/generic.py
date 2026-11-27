@@ -49,6 +49,10 @@ def locale(prop_doc) -> dict:
 	# site with no currency records the code itself becomes the symbol -
 	# "USD 1,500" beats a bare unlabelled number
 	symbol = frappe.db.get_value("Currency", currency, "symbol")
+	# //// Neoffice — a symbol that ends in a letter ("CHF", "kr") is set apart from the figure, as the fallback above already
+	# does: a Swiss hotel printed "CHF378.00" because the Currency master's symbol is the bare code.
+	if symbol and symbol[-1].isalpha():
+		symbol += " "
 	return {
 		"currency_symbol": symbol or f"{currency} ",
 		"locale": "en-US",

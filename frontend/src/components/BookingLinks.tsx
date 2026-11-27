@@ -8,6 +8,7 @@ import { callGuest, call } from "../lib/api"
 import { serverError } from "../lib/resource"
 import { fmtMoney } from "../lib/money"
 import { t as translate, useUILanguage } from "../lib/i18n"
+import { toFullPath } from "../lib/routing" //// Neoffice
 import { Button } from "./ui/button"
 
 const inputCls =
@@ -51,7 +52,8 @@ export default function BookingLinks({ property, slug }: { property: string; slu
     if (src) qs.set("src", src)
     const dates = checkIn && checkOut && checkOut > checkIn ? `/${checkIn}/${checkOut}/2/0` : ""
     const q = qs.toString()
-    return `${window.location.origin}/book${dates}${q ? `?${q}` : ""}`
+    //// Neoffice: the booking page is served under /kamra; on a Neoffice instance a bare /book is the theme's "book an appointment" page
+    return `${window.location.origin}${toFullPath("/book")}${dates}${q ? `?${q}` : ""}`
   }, [slug, room, plan, checkIn, checkOut, tag])
 
   const copy = async () => {

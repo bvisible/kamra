@@ -4357,6 +4357,7 @@
   "Online check-in not sent": "Arrivée en ligne non envoyée",
   "Online check-in sent, not filled": "Arrivée en ligne envoyée, non remplie",
   "Online collection uses the payment gateway set under Settings → Payments, where your country offers one (India: Razorpay or Cashfree). Until a gateway is connected, the advance is recorded as due and settled at the desk.": "L'encaissement en ligne passe par la passerelle de paiement configurée sous Réglages → Paiements, lorsque votre pays en propose une (Inde : Razorpay ou Cashfree). Tant qu'aucune passerelle n'est connectée, l'acompte est enregistré comme dû et réglé à la réception.",
+  "Online payment is not offered in your country yet: guests pay at the hotel.": "Le paiement en ligne n'est pas encore proposé dans votre pays : les clients règlent à l'hôtel.",
   "Online payment links are not available for this country yet. Take payments at the desk.": "Les liens de paiement en ligne ne sont pas encore disponibles pour ce pays. Encaissez les paiements à la réception.",
   "Online, market {v0}": "En ligne, cours du marché : {v0}",
   "Only {n} room left for these dates": "Plus que {n} chambre disponible pour ces dates",

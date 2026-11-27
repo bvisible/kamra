@@ -35,6 +35,8 @@ import { formatPhoneDisplay, formatPhoneTel } from "../lib/phone"
 import { petChargeBasis } from "../lib/pets"
 import { useT, t as translate } from "../lib/i18n"
 import { adoptGuestLanguage } from "../lib/dir"
+import { toFullPath } from "../lib/routing" //// Neoffice
+import { attemptFor, type BookingAttempt } from "../lib/bookingAttempt" //// Neoffice
 import { LanguageSwitcher } from "../components/LanguageSwitcher"
 import { addDays, nightsBetween, parseDate, stayFromParams, todayPlus } from "../lib/stay"
 import ChildAges, {
@@ -77,6 +79,7 @@ interface Showcase {
     state: string
     pincode: string | null
     country?: string | null
+    country_code?: string | null //// Neoffice: ISO code for the structured data, from the server
     phone: string | null
     google_reviews_url: string | null
     tripadvisor_url: string | null
@@ -550,6 +553,8 @@ export default function PublicBooking() {
   const [error, setError] = useState<string | null>(null)
   const [loadFailed, setLoadFailed] = useState(false)
   const [busy, setBusy] = useState(false)
+  //// Neoffice: the key of the booking attempt in progress, with what it was made of (see submitBooking)
+  const attempt = useRef<BookingAttempt | null>(null)
 
   const checkOut = search.check_out_date
   const nights = nightsBetween(search.check_in_date, checkOut)
@@ -639,7 +644,8 @@ export default function PublicBooking() {
       canonical.rel = "canonical"
       document.head.appendChild(canonical)
     }
-    canonical.href = `${window.location.origin}/book${propertySlug ? `?property=${encodeURIComponent(propertySlug)}` : ""}`
+    //// Neoffice: under /kamra (a bare /book is the Neoffice theme's page), like the booking link of the Booking engine screen
+    canonical.href = `${window.location.origin}${toFullPath("/book")}${propertySlug ? `?property=${encodeURIComponent(propertySlug)}` : ""}`
 
     const isStr = p.property_kind === "Short Term Rental"
     const schemaType = isStr ? "VacationRental" : "Hotel"
@@ -658,7 +664,8 @@ export default function PublicBooking() {
         "@type": "PostalAddress",
         addressLocality: p.city,
         addressRegion: p.state,
-        addressCountry: "IN",
+        //// Neoffice: the hotel's real country (ISO code from the server), never India's "IN"; left out when unknown
+        addressCountry: p.country_code ?? undefined,
       },
       checkinTime: p.checkin_time?.slice(0, 5),
       checkoutTime: p.checkout_time?.slice(0, 5),
@@ -758,31 +765,34 @@ export default function PublicBooking() {
     setBusy(true)
     setError(null)
     try {
+      const stay = {
+        property,
+        room_type: booking,
+        check_in_date: search.check_in_date,
+        check_out_date: checkOut,
+        adults: search.adults,
+        children: search.children,
+        child_ages: agesToSend(childAges),
+        pets: search.pets,
+        ...form,
+        meal_plan: selected.meal_plan,
+        voucher_code: appliedVoucher,
+        source_tag: sourceTag || undefined,
+        addons: Object.entries(addons)
+          .filter(([, qty]) => qty > 0)
+          .map(([experience, qty]) => ({ experience, qty })),
+      }
+      //// Neoffice: upstream sends no idempotency_key, so a double click (or a retry after a lost answer) created two bookings;
+      //// one key per attempt (lib/bookingAttempt.ts)
+      attempt.current = attemptFor(attempt.current, stay)
       const res = await callGuest<{
         reservation: string
         amount_after_tax: number
         advance_due: number
         balance_at_hotel: number
         status: string
-      }>("kamra.public_api.book",
-        {
-          property,
-          room_type: booking,
-          check_in_date: search.check_in_date,
-          check_out_date: checkOut,
-          adults: search.adults,
-          children: search.children,
-          child_ages: agesToSend(childAges),
-          pets: search.pets,
-          ...form,
-          meal_plan: selected.meal_plan,
-          voucher_code: appliedVoucher,
-          source_tag: sourceTag || undefined,
-          addons: Object.entries(addons)
-            .filter(([, qty]) => qty > 0)
-            .map(([experience, qty]) => ({ experience, qty })),
-        },
-      )
+      }>("kamra.public_api.book", { ...stay, idempotency_key: attempt.current.key }) //// Neoffice: one key per attempt
+      attempt.current = null //// Neoffice: the attempt is over, the next booking is a new one
       setDone({
         reservation: res.reservation,
         amount: res.amount_after_tax,
@@ -1605,7 +1615,8 @@ export default function PublicBooking() {
                           ) : null}
                           <p className="flex items-start gap-2 text-sm font-medium text-zinc-800">
                             <MapPin className="mt-0.5 size-4 shrink-0 text-brand-600" aria-hidden />
-                            {loc.address || `${p.city}, ${p.state}`}
+                            {/* //// Neoffice: a hotel without a region printed "Lausanne, null" */}
+                            {loc.address || [p.city, p.state].filter(Boolean).join(", ")}
                           </p>
                           {loc.google_maps_url && (
                             <a href={loc.google_maps_url} target="_blank" rel="noreferrer"
@@ -1654,9 +1665,8 @@ export default function PublicBooking() {
 
             <div className="mt-12 flex flex-col items-center gap-3">
               <LanguageSwitcher className="md:hidden" />
-              <p className="text-center text-xs text-zinc-400">
-                {t("Powered by Kamra - the open-source, agent-ready hotel PMS")}
-              </p>
+              {/* //// Neoffice: upstream's "Powered by Kamra" line is removed: the name is reserved by the project's TRADEMARK.md and
+                  a hotel's guests see the hotel's page, not the engine's. */}
             </div>
           </div>
 

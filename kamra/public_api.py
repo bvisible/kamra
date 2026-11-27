@@ -54,6 +54,27 @@ def _room_type_payload(rt) -> dict:
 	}
 
 
+# //// Neoffice — added helpers for hotels outside the countries that have a payment gateway.
+def _country_code(country: str | None) -> str | None:
+	"""The ISO 3166-1 alpha-2 code of a country by its name in Frappe's Country list, or None."""
+	code = frappe.db.get_value("Country", country, "code") if country else None
+	return code.upper() if code else None
+
+
+def _booking_payment_mode(prop) -> str:
+	"""The booking payment mode the page may act on. Upstream believes every hotel can take a card: a hotel set to "Advance
+	percent", "Registration fee" or "Full online" in a country with no payment gateway (Switzerland has none: its pack offers
+	no provider) showed "paid online" and "Confirm & pay", and nothing ever opened. Without a gateway the guest pays at the
+	hotel, whatever the setting says; the setting itself is kept and takes effect the day a gateway exists.
+	Remove with the online payment of the Swiss pack (a gateway in `payment_gateways(pack)`)."""
+	from kamra.localization import pack_for, payment_gateways
+
+	mode = prop.get("booking_payment_mode") or "Pay at hotel"
+	if mode != "Pay at hotel" and not payment_gateways(pack_for(prop.get("name"))):
+		return "Pay at hotel"
+	return mode
+
+
 def _property_payload(prop) -> dict:
 	return {
 		"name": prop.name,
@@ -68,6 +89,9 @@ def _property_payload(prop) -> dict:
 		"city": prop.city, "state": prop.state,
 		"pincode": prop.pincode,
 		"country": prop.get("country") or "India",
+		# //// Neoffice — the page used to write "IN" in its structured data whatever the hotel's country was: it now has the
+		# real ISO 3166-1 code (None when the country is not one Frappe knows). Keep with the JSON-LD of PublicBooking.tsx.
+		"country_code": _country_code(prop.get("country")),
 		"phone": prop.phone, "email": prop.email,
 		"website": prop.website,
 		"google_reviews_url": prop.get("google_reviews_url"),
@@ -97,7 +121,8 @@ def _property_payload(prop) -> dict:
 		"og_image": prop.get("og_image"),
 		"page_slug": prop.get("page_slug"),
 		"booking_engine_enabled": prop.get("booking_engine_enabled"),
-		"payment_mode": prop.get("booking_payment_mode") or "Pay at hotel",
+		# //// Neoffice — what the hotel set, but never an online payment the country cannot take (see _booking_payment_mode)
+		"payment_mode": _booking_payment_mode(prop),
 		"advance_percent": float(prop.get("advance_percent") or 0),
 		"registration_fee": float(prop.get("registration_fee") or 0),
 		"cleaning_fee": float(prop.get("cleaning_fee") or 0),
@@ -299,17 +324,34 @@ def default_property():
 	raise  # frappe.throw always raises; CodeQL does not treat it as noreturn
 
 
+def _regional_locale(prop, language: str | None) -> str | None:
+	"""//// Neoffice — a BCP 47 tag from the hotel's language and its country ("fr-CH": a Swiss hotel that books in French).
+	The language is the hotel's booking language, else the language of the ERP; the region is the hotel's country. None
+	when the country is not one Frappe knows. Remove when every country has a pack that sets its own locale."""
+	region = _country_code(prop.get("country"))
+	if not region:
+		return None
+	lang = language or frappe.db.get_single_value("System Settings", "language") or "en"
+	return f"{lang.replace('_', '-').split('-')[0].lower()}-{region}"
+
+
 def _public_locale(property: str) -> dict:
 	from kamra.languages import enabled_codes, public_booking_language
-	from kamra.localization import pack_for, privacy_terms
+	from kamra.localization import generic, pack_for, privacy_terms  # //// Neoffice: generic, for the locale below
 	prop = frappe.get_cached_doc("Property", property)
 	pack = pack_for(property)
 	loc = pack.locale(prop)
+	language = public_booking_language(prop.get("booking_language"))
+	locale = loc.get("locale") or "en"
+	if pack is generic:
+		# //// Neoffice — the generic pack says "en-US" for every country, so a Swiss hotel printed English prices; the
+		# locale now follows the hotel's country and language (a pack that sets its own locale is left alone).
+		locale = _regional_locale(prop, language) or locale
 	# "" is a valid symbol (generic pack shows bare numbers)
 	return {"currency_symbol": loc.get("currency_symbol") or "",
-	        "locale": loc.get("locale") or "en",
+	        "locale": locale,  # //// Neoffice: regional for a country without a pack (see above)
 	        "currency": loc.get("currency") or "",
-	        "default_language": public_booking_language(prop.get("booking_language")),
+	        "default_language": language,  # //// Neoffice: the same value as before, read once above
 	        "enabled_languages": enabled_codes(),
 	        **privacy_terms(pack)}
 
@@ -888,7 +930,8 @@ def _advance_terms(prop, total: float, rules: dict | None = None) -> tuple[float
 	usual advance; a season with its own advance % (25, 50) asks that % for
 	these dates. `rules` is the quote's stay_rules."""
 	rules = rules or {}
-	mode = prop.get("booking_payment_mode") or "Pay at hotel"
+	# //// Neoffice — never an advance a country without a gateway cannot collect (see _booking_payment_mode)
+	mode = _booking_payment_mode(prop)
 	total = float(total or 0)
 	sym = _public_locale(prop.name).get("currency_symbol", "") if prop.get("name") else ""
 	season_pct = float(rules.get("advance_percent") or 0)

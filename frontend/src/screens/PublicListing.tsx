@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react" //// Neoffice: useRef, for the booking attempt
 import { clampGuests, maxCapacity } from "../lib/occupancy"
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import {
@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 import { callGuest } from "../lib/api"
 import { serverError } from "../lib/resource"
+import { attemptFor, type BookingAttempt } from "../lib/bookingAttempt" //// Neoffice
 import { accentVars } from "../lib/accents"
 import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
@@ -238,6 +239,7 @@ export default function PublicListing() {
   const [done, setDone] = useState<{ reservation: string; amount: number; status?: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const attempt = useRef<BookingAttempt | null>(null) //// Neoffice: see lib/bookingAttempt.ts
 
   const checkOut = search.check_out_date
 
@@ -368,19 +370,23 @@ export default function PublicListing() {
     setBusy(true)
     setError(null)
     try {
+      const stay = {
+        property: resolved.property,
+        room_type: booking,
+        check_in_date: search.check_in_date,
+        check_out_date: checkOut,
+        adults: search.adults,
+        children: search.children,
+        child_ages: agesToSend(childAges),
+        pets: search.pets,
+        ...form,
+      }
+      //// Neoffice: one idempotency key per booking attempt, so a double click books once (lib/bookingAttempt.ts)
+      attempt.current = attemptFor(attempt.current, stay)
       const res = await callGuest<{ reservation: string; amount_after_tax: number; status?: string }>("kamra.public_api.book",
-        {
-          property: resolved.property,
-          room_type: booking,
-          check_in_date: search.check_in_date,
-          check_out_date: checkOut,
-          adults: search.adults,
-          children: search.children,
-          child_ages: agesToSend(childAges),
-          pets: search.pets,
-          ...form,
-        },
+        { ...stay, idempotency_key: attempt.current.key },
       )
+      attempt.current = null //// Neoffice: the attempt is over, the next booking is a new one
       setDone({ reservation: res.reservation, amount: res.amount_after_tax, status: res.status })
     } catch (e) {
       setError(serverError(e))

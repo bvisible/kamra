@@ -9,7 +9,8 @@ import { PRESETS, accentHex } from "../lib/accents"
 import { serverError, updateResource } from "../lib/resource"
 import { Button } from "../components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
-import { cur } from "../lib/money"
+import { cur, useLocale } from "../lib/money"
+import { toFullPath } from "../lib/routing" //// Neoffice
 import { useOfferedLanguages, t as translate, useUILanguage } from "../lib/i18n"
 
 type Doc = Record<string, any>
@@ -26,6 +27,11 @@ export default function BookingEngine() {
   const offered = useOfferedLanguages()
   const property = getCurrentProperty()
   const { section = "profile" } = useParams()
+  //// Neoffice: a country with no payment gateway (Switzerland: its pack offers none) cannot take an advance online, so the
+  //// "Payments" section offers "Pay at hotel" only and says why. Judged only once the country's locale has loaded (a currency),
+  //// so a slow or failed load never hides the modes of a country that has a gateway. Remove with the Swiss gateway.
+  const loc = useLocale()
+  const noGateway = Boolean(loc.currency) && loc.integrations.payment_gateways.length === 0
 
   const [doc, setDoc] = useState<Doc | null>(null)
   const [busy, setBusy] = useState(false)
@@ -184,7 +190,7 @@ export default function BookingEngine() {
                 onChange={(e) => updateField("booking_engine_enabled", e.target.checked ? 1 : 0)}
               />{translate("Engine Live")}</label>
             <a
-              href={`/book`}
+              href={toFullPath("/book")} //// Neoffice: under /kamra; a bare /book is the Neoffice theme's page on an instance
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1.5 rounded-lg bg-white border border-zinc-200 px-3.5 py-1.5 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
@@ -554,16 +560,24 @@ export default function BookingEngine() {
                     <span className="mb-1 block text-sm font-medium text-zinc-600">{translate("Collect on booking")}</span>
                     <select
                       className={inputCls}
-                      value={doc.booking_payment_mode ?? "Pay at hotel"}
+                      //// Neoffice: with no gateway the mode shown is "Pay at hotel" (noGateway above)
+                      value={noGateway ? "Pay at hotel" : (doc.booking_payment_mode ?? "Pay at hotel")}
                       onChange={(e) => updateField("booking_payment_mode", e.target.value)}
+                      disabled={noGateway} //// Neoffice: see noGateway above
                     >
                       <option value={"Pay at hotel"}>{translate("Pay at hotel")}</option>
-                      <option value={"Advance percent"}>{translate("Advance percent")}</option>
-                      <option value={"Registration fee"}>{translate("Registration fee")}</option>
-                      <option value={"Full online"}>{translate("Full online")}</option>
+                      {!noGateway && <option value={"Advance percent"}>{translate("Advance percent")}</option>}
+                      {!noGateway && <option value={"Registration fee"}>{translate("Registration fee")}</option>}
+                      {!noGateway && <option value={"Full online"}>{translate("Full online")}</option>}
                     </select>
                   </label>
-                  {doc.booking_payment_mode === "Advance percent" && (
+                  {/* //// Neoffice: why the other modes are missing (noGateway above) */}
+                  {noGateway && (
+                    <p className="text-sm text-zinc-600">
+                      {translate("Online payment is not offered in your country yet: guests pay at the hotel.")}
+                    </p>
+                  )}
+                  {!noGateway && doc.booking_payment_mode === "Advance percent" && (
                     <label className="block max-w-xs">
                       <span className="mb-1 block text-sm font-medium text-zinc-600">{translate("Advance percentage")}</span>
                       <input
@@ -574,7 +588,8 @@ export default function BookingEngine() {
                       <span className="mt-1 block text-xs text-zinc-400">{translate("Collected upfront; the rest is paid at the hotel.")}</span>
                     </label>
                   )}
-                  {doc.booking_payment_mode === "Registration fee" && (
+                  {/* //// Neoffice: an online amount is asked only where a gateway exists */}
+                  {!noGateway && doc.booking_payment_mode === "Registration fee" && (
                     <label className="block max-w-xs">
                       <span className="mb-1 block text-sm font-medium text-zinc-600">{translate("Registration fee (")}{cur()})
                       </span>
@@ -585,7 +600,8 @@ export default function BookingEngine() {
                       />
                     </label>
                   )}
-                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">{translate("Online collection uses the payment gateway set under Settings → Payments, where your country offers one (India: Razorpay or Cashfree). Until a gateway is connected, the advance is recorded as due and settled at the desk.")}</div>
+                  {/* //// Neoffice: the gateway note is for countries that have one */}
+                  {!noGateway && <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">{translate("Online collection uses the payment gateway set under Settings → Payments, where your country offers one (India: Razorpay or Cashfree). Until a gateway is connected, the advance is recorded as due and settled at the desk.")}</div>}
                 </div>
               )}
 

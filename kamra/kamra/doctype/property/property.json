@@ -252,7 +252,6 @@
    "label": "Hold Window (minutes)"
   },
   {
-   "default": "5000",
    "fieldname": "security_deposit_amount",
    "fieldtype": "Currency",
    "label": "Security Deposit Amount"
