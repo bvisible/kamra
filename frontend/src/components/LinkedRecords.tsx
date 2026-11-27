@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   Building2,
+  ExternalLink,
   PartyPopper,
   Receipt,
   UserCircle2,
@@ -26,6 +27,7 @@ interface Links {
     status: string
     balance: number
     invoice_number: string | null
+    invoice_url?: string | null
   }[]
   company: string | null
   group_booking: string | null
@@ -94,6 +96,23 @@ export default function LinkedRecords({
           </span>
         </button>,
       )
+  //// Neoffice: where a bill has an invoice in the accounts the answer carries its address (`invoice_url`, added by the NeoHotel app
+  //// through its override of `linked_records`): a chip opens it in the desk. Upstream's answer has no such field and draws nothing.
+  if (!exclude.includes("folio"))
+    for (const f of links.folios)
+      if (f.invoice_url)
+        chips.push(
+          <a
+            key={`${f.name}-invoice`}
+            className={chipCls}
+            href={f.invoice_url}
+            target="_top"
+            title={translate("Invoice {v0}", { v0: String(f.invoice_number ?? "") })}
+          >
+            <ExternalLink className="size-3.5" aria-hidden />
+            {translate("Invoice {v0}", { v0: String(f.invoice_number ?? "") })}
+          </a>,
+        )
   if (links.group_booking && !exclude.includes("group"))
     chips.push(
       <button
