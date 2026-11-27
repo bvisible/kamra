@@ -79,6 +79,20 @@ class Property(Document):
 			from kamra.languages import assert_enabled_language
 			self.booking_language = assert_enabled_language(code)
 
+	# //// Neoffice — a new hotel starts from the instance's own time zone, country and currency (System Settings, the
+	# //// default company), not upstream's Indian defaults (Asia/Kolkata, India, INR), which are removed from property.json
+	# //// for that (NEOFFICE_FORK_MARKERS.md): on 27.11.2026 a first hotel on osiris came in at Calcutta time
+	# //// (neoffice-maintenance#3433). A value the person typed is kept.
+	def before_insert(self):
+		self.timezone = (self.timezone or "").strip() or frappe.db.get_single_value("System Settings", "time_zone") or ""
+		if not self.country:
+			self.country = frappe.db.get_single_value("System Settings", "country") or ""
+		if not self.currency:
+			from frappe.defaults import get_global_default
+
+			company = get_global_default("company")
+			self.currency = (company and frappe.get_cached_value("Company", company, "default_currency")) or ""
+
 	def after_insert(self):
 		# A new property starts with allowances signed off by a Hotel Admin,
 		# every amount. Existing properties keep the registry default (Off),
@@ -89,6 +103,11 @@ class Property(Document):
 		clear_cache(self.name)
 
 	def on_update(self):
+		# //// Neoffice — the site's clock is the company's, set by Neoffice (Europe/Zurich on every instance), read by every
+		# //// app of the ERP (today, due dates, the scheduler): a hotel never moves it. Upstream writes the sole property's
+		# //// zone into System Settings, and with its default zone a first hotel put a whole ERP on Calcutta time
+		# //// (neoffice-maintenance#3433). The hotel keeps its zone for itself; Kamra's health check says when the two differ.
+		return
 		# Single-site tenants: keep Frappe's site clock aligned with the
 		# property so night audit / now_datetime follow hotel local time.
 		# Multi-property sites with different zones should leave System

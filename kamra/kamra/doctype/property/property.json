@@ -192,7 +192,6 @@
    "label": "Column Break B"
   },
   {
-   "default": "India",
    "fieldname": "country",
    "fieldtype": "Data",
    "label": "Country"
@@ -203,7 +202,6 @@
    "label": "Pincode"
   },
   {
-   "default": "Asia/Kolkata",
    "fieldname": "timezone",
    "fieldtype": "Data",
    "label": "Timezone"
@@ -214,7 +212,6 @@
    "label": "Operations"
   },
   {
-   "default": "INR",
    "fieldname": "currency",
    "fieldtype": "Link",
    "label": "Currency",

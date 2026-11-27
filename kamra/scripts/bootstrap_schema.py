@@ -63,11 +63,11 @@ def execute():
         f("city", "Data"),
         f("state", "Data"),
         f("column_break_b", "Column Break"),
-        f("country", "Data", default="India"),
+        f("country", "Data"),  # //// Neoffice — no Indian default: a new hotel takes the instance's country (property.py, #3433)
         f("pincode", "Data"),
-        f("timezone", "Data", default="Asia/Kolkata"),
+        f("timezone", "Data"),  # //// Neoffice — no default zone: a new hotel takes the instance's (property.py, #3433)
         f("sb_ops", "Section Break", label="Operations"),
-        f("currency", "Link", options="Currency", default="INR"),
+        f("currency", "Link", options="Currency"),  # //// Neoffice — no INR default: a new hotel takes the company's currency (property.py, #3433)
         f("checkin_time", "Time", label="Check-in Time", default="14:00:00"),
         f("checkout_time", "Time", label="Check-out Time", default="11:00:00"),
         f("column_break_c", "Column Break"),
