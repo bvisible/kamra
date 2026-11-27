@@ -28,6 +28,10 @@ Every change carries a `//// Neoffice` comment with its reason: `grep -rn "////"
   menu of the area it is in (`components/FramedStrip.tsx`), talks to the desk (`kamra:route` from the frame, `kamra:navigate`
   to it: `components/FramedBridge.tsx`) and wears the desk's theme (`lib/theme.ts`). Files: `frontend/src/lib/framed.ts`,
   `components/FramedBridge.tsx`, `components/FramedStrip.tsx`, and marked lines in `AppShell.tsx`, `main.tsx`, `index.css`.
+- **French interface** (`frontend/src/i18n/locales/fr.json`, `languages.json`): upstream ships no French. The 7,103 strings of
+  `catalog.csv` are translated with the vocabulary of the Neoffice hotel space (folio = « note de client », night audit =
+  « clôture du jour »). Inside the desk's frame, the application follows the desk's language (`deskLanguage` in
+  `frontend/src/lib/dir.ts`, marked `//// Neoffice`). A new string of the catalogue needs its French entry in `fr.json`: `npm run i18n:coverage` lists the missing ones.
 - **The built SPA is committed** (`kamra/public/frontend`, as upstream does): after any change to `frontend/` or a merge,
   rebuild it (`cd frontend && npm ci && npm run build`) and commit the result; never rebuild it on an instance.
 

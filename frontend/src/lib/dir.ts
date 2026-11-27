@@ -6,6 +6,8 @@
 
 import registry from "../i18n/languages.json"
 import { effectiveLanguage, listedLanguages } from "./enabledLanguages"
+//// Neoffice — the desk's language is read from the frame (see deskLanguage below)
+import { isFramed } from "./framed"
 
 export interface LangDef {
   code: string
@@ -46,6 +48,24 @@ export function langDef(code: string): LangDef {
 // engine default, else the browser's. Not stored, so a later default applies.
 let guestDefault: Lang | null = null
 
+//// Neoffice — when this screen is framed in the Neoffice desk, the desk's language wins: a French desk user must not
+//// read English inside the Hotel space. Same origin, so the desk's <html lang> is readable. Null when not framed, or
+//// when the desk's language is not one Kamra ships. Without this, a framed Kamra always fell back to English.
+function deskLanguage(): Lang | null {
+  if (!isFramed()) return null
+  try {
+    const value = window.parent.document.documentElement.getAttribute("lang")?.trim().toLowerCase()
+    if (!value) return null
+    const exact = known.find((code) => code.toLowerCase() === value)
+    if (exact) return exact
+    const primary = value.split(/[-_]/)[0]
+    return known.find((code) => code.toLowerCase() === primary) ?? null
+  } catch {
+    // A parent that refuses to be read is not the desk.
+    return null
+  }
+}
+
 export const getLang = (): Lang => {
   let raw: string | null = null
   try {
@@ -54,7 +74,9 @@ export const getLang = (): Lang => {
     /* private mode */
   }
   const fallbacks = key() === "kamra-guest-lang" ? [guestDefault] : []
-  return effectiveLanguage(raw || null, enabledCodes, known, fallbacks)
+  //// Neoffice — the desk's language first, then the saved choice, then the guest fallback (see deskLanguage above)
+  const desk = key() === "kamra-lang" ? deskLanguage() : null
+  return effectiveLanguage(desk ?? raw ?? null, enabledCodes, known, [raw || null, ...fallbacks])
 }
 
 /** Languages the pickers may list. The array identity is stable until the

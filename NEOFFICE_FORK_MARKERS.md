@@ -7,3 +7,5 @@ these files cannot.
 | Artifact | Why |
 |---|---|
 | `kamra/public/frontend/**` | The built single-page app, committed as upstream commits it. Rebuilt with `npm run build` in `frontend/` after a change to `frontend/` or a merge. |
+| `frontend/src/i18n/locales/fr.json` | Added file, data only: the French dictionary (7,103 keys, one per entry of `catalog.csv`), translated with the vocabulary of the hotel space, then reviewed. JSON cannot carry a `////` comment; the rule is in `NEOFFICE.md`. `npm run i18n:coverage` lists any string of `catalog.csv` still missing here. |
+| `frontend/src/i18n/languages.json` | Upstream registry of UI languages with one Neoffice row: `fr` (Français), so the desk's French users get French in the framed Hotel space. JSON cannot carry a `////` comment; the reason is here. |
