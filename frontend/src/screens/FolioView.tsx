@@ -345,7 +345,10 @@ export default function FolioView() {
         .then((d) => {
           setData(d)
           // the balance prefill is home money; a foreign amount is typed in
-          setPayment((p) => ({ ...p, amount: p.currency ? "" : String(d.folio.balance || "") }))
+          //// Neoffice — the folio keeps the tax to the thousandth (8.1 % of 52.50 is 4.2525): the prefill offered 258.212 and the
+          //// server stored a payment of three decimals, which no cash, card or TWINT amount has. Rounded to the cent, as every other
+          //// amount of the screen is shown. To remove when the folio rounds its tax lines.
+          setPayment((p) => ({ ...p, amount: p.currency ? "" : String(Math.round((d.folio.balance || 0) * 100) / 100 || "") }))
           return d.stay.reservation
             ? call<SiblingFolio[]>("kamra.api.reservation_folios", {
                 reservation: d.stay.reservation,
@@ -386,6 +389,11 @@ export default function FolioView() {
   }, [])
   // a hotel that charges no tax (its only rate is 0%) gets no tax pickers
   const noTax = rates.length === 1 && Number(rates[0]) === 0
+  //// Neoffice — the charge form started at a rate of 5 % (India's), whatever the country pack offers: in Switzerland the list reads
+  //// « VAT 0 % » but 5 was sent and the server refused it (« Tax rate 5% is not allowed ») for every type but food and the minibar.
+  //// The rate shown is the rate sent: the first of the pack's rates when the held one is none of them. To remove when upstream starts
+  //// the form from the pack's rates.
+  const chargeRate = rates.map(String).includes(charge.gst_rate) ? charge.gst_rate : String(rates[0] ?? 0)
   // the rate the server will put on this charge when it is food & beverage
   // (same words and rate as kamra.api._resolve_charge_gst); null = the
   // picked rate applies
@@ -1425,7 +1433,8 @@ export default function FolioView() {
                 /* only money the guest is owed goes back; a guest who still
                    owes settles first (the server refuses it too) */
                 <button className="mt-1 text-xs font-medium text-rose-600 hover:underline"
-                  onClick={() => setRefund({ amount: String(-folio.balance), mode: "Cash", reason: "" })}>
+                  //// Neoffice — rounded to the cent like the payment prefill (the folio balance has thousandths); see load().
+                  onClick={() => setRefund({ amount: String(Math.round(-folio.balance * 100) / 100), mode: "Cash", reason: "" })}>
                   {t("Refund money (deposit return / over-collection)")}
                 </button>
               )}
@@ -1509,7 +1518,8 @@ export default function FolioView() {
                 <select
                   className={inputCls}
                   aria-label={t("{tax} rate", { tax: taxLabel() })}
-                  value={charge.gst_rate}
+                  //// Neoffice — the rate shown is the rate sent (chargeRate, above): the held 5 % is no rate of the pack.
+                  value={chargeRate}
                   onChange={(e) =>
                     setCharge({ ...charge, gst_rate: e.target.value })
                   }
@@ -1541,9 +1551,10 @@ export default function FolioView() {
                       folio: folio.name,
                       ...charge,
                       amount: Number(charge.amount),
+                      //// Neoffice — chargeRate, not the held rate (see its definition above).
                       gst_rate: fixedRate !== null && rates.includes(fixedRate)
                         ? fixedRate
-                        : Number(charge.gst_rate),
+                        : Number(chargeRate),
                       is_alcohol: charge.is_alcohol ? 1 : 0,
                     }),
                   )

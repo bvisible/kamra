@@ -57,6 +57,12 @@ Every change carries a `//// Neoffice` comment with its reason: `grep -rn "////"
   hotel with no sum set), leaves the percentage as it was, so no other country changes. The quote of a booking still knows the
   percentage only: the tourist tax is on the bill, not in the price announced. Tests live in the hotel app
   (`test_the_tourist_tax_is_per_person_and_per_night.py`). Remove the day upstream lets a pack price the levy.
+- **The bill's charge form starts at a rate the pack offers, and the payment it proposes is in whole cents**
+  (`frontend/src/screens/FolioView.tsx`, three marked hunks): the charge form held a rate of 5 % (India's) whatever the pack lists, so a
+  Swiss clerk saw « VAT 0 % » and sent 5, which the server refused for every charge type but food and the minibar; it now shows and
+  sends the first rate of the pack when the held one is none of them. The balance the form proposed to pay (and to refund) had the
+  thousandths of the folio's tax (258.212): rounded to the cent. Found by the independent test of the Swiss pack of the hotel app. Remove
+  the first the day upstream starts the form from the pack's rates, the second the day the folio rounds its tax lines.
 - **The meals the restaurant's till put on the rooms, for the reception** (`frontend/src/components/MealsOnTheRooms.tsx`, one marked
   block in `screens/Billing.tsx`, two strings in `fr.json` and `de.json`): a card on « Guest bills » that lists, per stay in house, the
   meals a till of the same site invoiced and put on the bill (room, guest, each meal with its invoice, till and hour, and what the stay
