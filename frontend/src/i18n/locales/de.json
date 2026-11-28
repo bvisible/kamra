@@ -369,5 +369,7 @@
   "Last 4 (optional)": "Letzte 4 (optional)",
   "Last 4 digits of the card (optional)": "Letzte 4 Ziffern der Karte (optional)",
   "Choose the card type for the Card payment.": "Wählen Sie den Kartentyp für die Kartenzahlung.",
-  "Give exactly the last 4 digits of the card, or leave them empty.": "Geben Sie genau die letzten 4 Ziffern der Karte ein oder lassen Sie das Feld leer."
+  "Give exactly the last 4 digits of the card, or leave them empty.": "Geben Sie genau die letzten 4 Ziffern der Karte ein oder lassen Sie das Feld leer.",
+  "Meals on the rooms": "Mahlzeiten auf den Zimmern",
+  "Put on the bill by the restaurant's till and already invoiced there. The guest pays them with the bill at departure. To move one to another room or take it off, use the invoice history of the till.": "Durch die Kasse des Restaurants auf die Gästerechnung gebucht und dort bereits verrechnet. Der Gast bezahlt sie bei der Abreise mit der Gästerechnung. Um eine davon in ein anderes Zimmer zu verschieben oder vom Zimmer zu nehmen, verwenden Sie den Rechnungsverlauf der Kasse."
 }

@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom"
 import { call, getCurrentProperty } from "../lib/api"
 import { listResource, type Row } from "../lib/resource"
 import { auditHistory, type RunRow } from "../lib/eod"
+//// Neoffice — what the restaurant's till put on the rooms, for the reception (components/MealsOnTheRooms.tsx).
+import { MealsOnTheRooms } from "../components/MealsOnTheRooms"
 import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
 import { cur, fmtMoney, moneyLocale, fmtAmount } from "../lib/money"
@@ -146,6 +148,9 @@ export default function Billing() {
           </Button>
         </CardHeader>
       </Card>
+
+      {/* //// Neoffice — the meals the restaurant's till put on the rooms, to collect with the bill at departure: nothing is drawn where there are none. */}
+      <MealsOnTheRooms />
 
       {owing.length ? (
         <Card>

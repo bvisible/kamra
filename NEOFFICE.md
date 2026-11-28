@@ -44,6 +44,11 @@ Every change carries a `//// Neoffice` comment with its reason: `grep -rn "////"
   transit at 0 %, or the guest pays the VAT twice. `frappe.flags.kamra_rate_is_final` is set around one call by the hotel app,
   never by a request; every other caller is taxed as before. Tests live in the hotel app (`test_the_rate_of_the_till_is_kept.py`).
   Remove the day the restaurant's revenue and VAT no longer stay in the till's invoice.
+- **The meals the restaurant's till put on the rooms, for the reception** (`frontend/src/components/MealsOnTheRooms.tsx`, one marked
+  block in `screens/Billing.tsx`, two strings in `fr.json` and `de.json`): a card on « Guest bills » that lists, per stay in house, the
+  meals a till of the same site invoiced and put on the bill (room, guest, each meal with its invoice, till and hour, and what the stay
+  owes for them), read only. It asks the hotel app (`neohotel.till_plug.api.to_collect`, which answers hotel accounts only) and draws
+  nothing where the app is absent, refuses the account or has nothing to list. Remove it with the restaurant's till on the room.
 - **The built SPA is committed** (`kamra/public/frontend`, as upstream does): after any change to `frontend/` or a merge,
   rebuild it (`cd frontend && npm ci && npm run build`) and commit the result; never rebuild it on an instance.
 

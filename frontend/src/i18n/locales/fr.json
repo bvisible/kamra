@@ -7103,5 +7103,7 @@
   "ZATCA: still needed for valid e-invoices - {fields}.": "ZATCA : encore requis pour des factures électroniques valides - {fields}.",
   "Zero balance: use Quick check out above, or Check out on the row.": "Solde nul : utilisez Départ rapide ci-dessus, ou Enregistrer le départ sur la ligne.",
   "Zero-rate and complimentary rooms": "Chambres à tarif zéro et chambres offertes",
-  "Zero-rated on purpose": "Taux zéro volontairement"
+  "Zero-rated on purpose": "Taux zéro volontairement",
+  "Meals on the rooms": "Repas sur les chambres",
+  "Put on the bill by the restaurant's till and already invoiced there. The guest pays them with the bill at departure. To move one to another room or take it off, use the invoice history of the till.": "Portés sur la note de client par la caisse du restaurant et déjà facturés là-bas. Le client les règle avec sa note au départ. Pour en déplacer un vers une autre chambre ou le retirer de la chambre, utilisez l'historique des factures de la caisse."
 }
