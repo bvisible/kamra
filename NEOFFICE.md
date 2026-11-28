@@ -39,6 +39,11 @@ Every change carries a `//// Neoffice` comment with its reason: `grep -rn "////"
   regional number locale and a currency symbol set apart from the figure, the real country in the structured data, and "Pay at
   hotel" forced where the country has no payment gateway (the "Payments" screen offers nothing else and says why). Tests:
   `kamra/tests/test_neoffice_public_booking.py`. Remove the payment rule the day a gateway exists for the country.
+- **A till of the same site may say its rate is final** (`kamra/api.py`, `_resolve_charge_gst`, one marked hunk): Kamra replaces the
+  rate of a food line by the hotel's own; a meal already invoiced by the restaurant's till at its own VAT goes on the bill as a
+  transit at 0 %, or the guest pays the VAT twice. `frappe.flags.kamra_rate_is_final` is set around one call by the hotel app,
+  never by a request; every other caller is taxed as before. Tests live in the hotel app (`test_the_rate_of_the_till_is_kept.py`).
+  Remove the day the restaurant's revenue and VAT no longer stay in the till's invoice.
 - **The built SPA is committed** (`kamra/public/frontend`, as upstream does): after any change to `frontend/` or a merge,
   rebuild it (`cd frontend && npm ci && npm run build`) and commit the result; never rebuild it on an instance.
 

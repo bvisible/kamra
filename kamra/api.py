@@ -2072,6 +2072,12 @@ def _resolve_charge_gst(property: str, charge_type: str, description: str,
 	(human or agent) cannot mis-tax it. Food & beverage uses the F&B rate from
 	the localization pack; alcohol its own rate; a taxi with no rate the
 	services rate; otherwise the given rate."""
+	# //// Neoffice — a till of the same site says its rate is final: the meal it puts on the room was already invoiced at its own VAT, and
+	# //// the line is only the transit of that invoice (0 %). Kamra would replace the rate of a food line by the hotel's own, and the guest
+	# //// would pay the VAT twice. The flag is set around one call by neohotel (till_plug/charge.py), never by a request; every other
+	# //// caller is taxed as before. To remove when the restaurant's revenue and VAT no longer stay in the till's invoice (decision D7).
+	if frappe.flags.get("kamra_rate_is_final"):
+		return float(provided or 0)
 	text = f"{charge_type} {description}".lower()
 	if is_alcohol:
 		return float(provided) if provided else 18.0
