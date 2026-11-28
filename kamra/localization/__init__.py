@@ -88,6 +88,16 @@ def alcohol_default_tax_rate(pack, property: str | None) -> float | None:
 	return float(fn(property)) if fn else None
 
 
+# //// Neoffice — added accessor (no upstream equivalent). A room levy is a percentage of the room rate in Kamra, and a Swiss tourist tax
+# //// is a sum for each person and each night. A pack may price the levy of a night itself (`room_levy_for_night(prop_doc,
+# //// reservation, night_rate)` -> {"amount", "gst_rate", "description"}); a pack that does not, or that answers None, leaves Kamra's
+# //// percentage as it was, so no other country changes. To remove when upstream lets a pack price the levy.
+def room_levy_for_night(pack, prop_doc, reservation, night_rate) -> dict | None:
+	"""The levy of one night as the pack prices it ({"amount", "gst_rate", "description"}); None when the pack has no say."""
+	fn = getattr(pack, "room_levy_for_night", None)
+	return fn(prop_doc, reservation, night_rate) if fn else None
+
+
 def store_id_number(pack, id_type: str | None, value: str | None) -> str | None:
 	"""How a guest's ID number is kept. Core treats every ID as a plain card
 	and keeps what was typed; a pack can hold a national ID differently

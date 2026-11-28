@@ -50,6 +50,13 @@ Every change carries a `//// Neoffice` comment with its reason: `grep -rn "////"
   the rate (the Swiss pack of the hotel app: its standard rate); every other pack keeps 18, so no other country changes. Tests live
   in the hotel app (`test_the_swiss_vat_rates_follow_the_settings.py`, `test_a_hotel_outside_switzerland_is_as_before.py`). Remove
   the day upstream resolves the rate of an alcohol line from the pack.
+- **A country pack may price the levy of a night** (`kamra/localization/__init__.py`, `room_levy_for_night`, and one marked hunk in
+  `kamra/folio.py`, `_post_room_levy`): Kamra's room levy is a percentage of the room rate; a Swiss tourist tax is a sum for each person
+  and each night. A pack that defines `room_levy_for_night(prop_doc, reservation, night_rate)` returns the amount, the tax rate and the
+  words of the line (the Swiss pack of the hotel app, from the sums of its settings); a pack that does not, or that answers None (a Swiss
+  hotel with no sum set), leaves the percentage as it was, so no other country changes. The quote of a booking still knows the
+  percentage only: the tourist tax is on the bill, not in the price announced. Tests live in the hotel app
+  (`test_the_tourist_tax_is_per_person_and_per_night.py`). Remove the day upstream lets a pack price the levy.
 - **The meals the restaurant's till put on the rooms, for the reception** (`frontend/src/components/MealsOnTheRooms.tsx`, one marked
   block in `screens/Billing.tsx`, two strings in `fr.json` and `de.json`): a card on « Guest bills » that lists, per stay in house, the
   meals a till of the same site invoiced and put on the bill (room, guest, each meal with its invoice, till and hour, and what the stay

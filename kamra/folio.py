@@ -618,6 +618,27 @@ def _post_room_levy(folios, reservation, date, night_rate):
 	city / tourism tax) - its own line so the invoice shows it and the
 	ledger books it apart from room revenue."""
 	prop = frappe.get_cached_doc("Property", reservation.property)
+	# //// Neoffice — a country pack may price the levy of a night itself: Switzerland's tourist tax is a sum for each person and each
+	# //// night, not a percentage of the room rate (`room_levy_for_night`, localization/__init__.py). A pack that has no say (every
+	# //// other country, and a Swiss hotel with no sum set) answers None and the percentage below applies as before. To remove when
+	# //// upstream lets a pack price the levy.
+	from kamra.localization import pack_for, room_levy_for_night
+	pack_levy = room_levy_for_night(pack_for(reservation.property), prop, reservation, night_rate)
+	if pack_levy is not None:
+		if not pack_levy["amount"] or _charge_posted(reservation.name, "Room Levy", date):
+			return
+		_append_charge(folios, reservation, "Room Levy", {
+			"posting_date": date,
+			"charge_type": "Room Levy",
+			"reservation": reservation.name,
+			"description": pack_levy["description"],
+			"qty": 1,
+			"rate": pack_levy["amount"],
+			"amount": pack_levy["amount"],
+			"gst_rate": pack_levy["gst_rate"],
+			"auto_posted": 1,
+		})
+		return
 	pct = float(prop.get("room_levy_percent") or 0)
 	if not pct or not night_rate or _charge_posted(
 			reservation.name, "Room Levy", date):
