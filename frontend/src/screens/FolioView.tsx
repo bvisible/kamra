@@ -1298,8 +1298,15 @@ export default function FolioView() {
                       { label: "SGST", rate: g.rate / 2, amount: g.sgst },
                     ],
                   }))).map((r) => (
-                    <tr key={r.rate}>
-                      <td className="py-1.5 pr-3">{r.rate}%</td>
+                    //// Neoffice — a row of the recap may say who invoiced it (`issuer`: the hotel, or the restaurant's till for a meal it put on
+                    //// the bill), so that two rows of one rate are two rows (the key) and the guest reads what each invoiced. Rows of upstream carry none.
+                    <tr key={`${r.rate}-${(r as { issuer?: string }).issuer ?? ""}`}>
+                      <td className="py-1.5 pr-3">
+                        {r.rate}%
+                        {(r as { issuer?: string }).issuer && (
+                          <span className="block text-xs text-zinc-400">{(r as { issuer?: string }).issuer}</span>
+                        )}
+                      </td>
                       <td className="py-1.5 pr-3 text-right text-zinc-500">
                         {t("taxable {cur}{amount}", { cur: cur(), amount: inr(r.taxable) })}
                       </td>

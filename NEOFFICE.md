@@ -74,6 +74,11 @@ Every change carries a `//// Neoffice` comment with its reason: `grep -rn "////"
   meals a till of the same site invoiced and put on the bill (room, guest, each meal with its invoice, till and hour, and what the stay
   owes for them), read only. It asks the hotel app (`neohotel.till_plug.api.to_collect`, which answers hotel accounts only) and draws
   nothing where the app is absent, refuses the account or has nothing to list. Remove it with the restaurant's till on the room.
+- **A row of the VAT recap of a printed bill may say who invoiced it** (`frontend/src/screens/FolioView.tsx`, one marked block in the
+  recap table): the hotel app answers the call that draws the printed bill (`kamra.api.folio_invoice`) with the meals a till of the same
+  site put on the bill shown at their own rate, and adds an `issuer` to each row of `tax_summary` (« Invoiced by the hotel », « Invoiced
+  by the till, invoice no. … »). The row's key becomes the rate and the issuer, so that two rows of one rate are two rows, and the issuer
+  is written under the rate. A row without an issuer (every upstream row) is drawn as before. Remove it with the restaurant's till on the room.
 - **The built SPA is committed** (`kamra/public/frontend`, as upstream does): after any change to `frontend/` or a merge,
   rebuild it (`cd frontend && npm ci && npm run build`) and commit the result; never rebuild it on an instance.
 
