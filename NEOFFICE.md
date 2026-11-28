@@ -44,6 +44,12 @@ Every change carries a `//// Neoffice` comment with its reason: `grep -rn "////"
   transit at 0 %, or the guest pays the VAT twice. `frappe.flags.kamra_rate_is_final` is set around one call by the hotel app,
   never by a request; every other caller is taxed as before. Tests live in the hotel app (`test_the_rate_of_the_till_is_kept.py`).
   Remove the day the restaurant's revenue and VAT no longer stay in the till's invoice.
+- **A country pack may say the rate of an alcohol line without a rate** (`kamra/localization/__init__.py`, `alcohol_default_tax_rate`,
+  and one marked hunk in `kamra/api.py`, `_resolve_charge_gst`): Kamra gave 18 % to any alcohol line that came without a rate, the
+  Indian rate, in every country (a Swiss minibar bottle carried 18 % of VAT). A pack that defines `alcohol_tax_rate(property)` says
+  the rate (the Swiss pack of the hotel app: its standard rate); every other pack keeps 18, so no other country changes. Tests live
+  in the hotel app (`test_the_swiss_vat_rates_follow_the_settings.py`, `test_a_hotel_outside_switzerland_is_as_before.py`). Remove
+  the day upstream resolves the rate of an alcohol line from the pack.
 - **The meals the restaurant's till put on the rooms, for the reception** (`frontend/src/components/MealsOnTheRooms.tsx`, one marked
   block in `screens/Billing.tsx`, two strings in `fr.json` and `de.json`): a card on « Guest bills » that lists, per stay in house, the
   meals a till of the same site invoiced and put on the bill (room, guest, each meal with its invoice, till and hour, and what the stay

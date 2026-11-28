@@ -2080,7 +2080,14 @@ def _resolve_charge_gst(property: str, charge_type: str, description: str,
 		return float(provided or 0)
 	text = f"{charge_type} {description}".lower()
 	if is_alcohol:
-		return float(provided) if provided else 18.0
+		if provided:
+			return float(provided)
+		# //// Neoffice — an alcohol line without a rate took 18 % in every country (the Indian rate). The country pack may say the rate
+		# //// (`alcohol_tax_rate`, Switzerland: the standard rate); a pack that does not keeps 18.0, so no other country changes. To remove
+		# //// when upstream resolves the rate of an alcohol line from the pack (see localization/__init__.py).
+		from kamra.localization import alcohol_default_tax_rate, pack_for
+		pack_rate = alcohol_default_tax_rate(pack_for(property), property)
+		return pack_rate if pack_rate is not None else 18.0
 	if any(w in text for w in _FNB_WORDS):
 		from kamra.folio import _fnb_gst
 		return float(_fnb_gst(property))

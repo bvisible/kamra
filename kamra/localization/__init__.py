@@ -78,6 +78,16 @@ def services_tax_rate(pack, property: str | None) -> float:
 	return float(pack.fnb_tax_rate(property))
 
 
+# //// Neoffice — added accessor (no upstream equivalent). `_resolve_charge_gst` put 18 % on any alcohol line that came without a rate,
+# //// the Indian rate, in every country: a bottle posted at a Swiss minibar carried 18 % of VAT. A pack may now say the rate of such a
+# //// line (`alcohol_tax_rate(property)`); a pack that does not keeps the 18 % Kamra always gave, so no other country changes.
+# //// To remove when upstream resolves the rate of an alcohol line from the pack.
+def alcohol_default_tax_rate(pack, property: str | None) -> float | None:
+	"""The tax rate of an alcohol line that comes without a rate, when the pack says it; None when the pack has no say."""
+	fn = getattr(pack, "alcohol_tax_rate", None)
+	return float(fn(property)) if fn else None
+
+
 def store_id_number(pack, id_type: str | None, value: str | None) -> str | None:
 	"""How a guest's ID number is kept. Core treats every ID as a plain card
 	and keeps what was typed; a pack can hold a national ID differently
