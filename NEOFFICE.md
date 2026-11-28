@@ -63,6 +63,12 @@ Every change carries a `//// Neoffice` comment with its reason: `grep -rn "////"
   sends the first rate of the pack when the held one is none of them. The balance the form proposed to pay (and to refund) had the
   thousandths of the folio's tax (258.212): rounded to the cent. Found by the independent test of the Swiss pack of the hotel app. Remove
   the first the day upstream starts the form from the pack's rates, the second the day the folio rounds its tax lines.
+- **A country pack may tax a meal plan by its code** (`kamra/localization/__init__.py`, `meal_plan_tax_rate`; `kamra/folio.py`, the helper
+  `_meal_plan_gst` and one marked line in `post_room_night`; `kamra/pricing.py`, one marked hunk in `quote`): Kamra taxed every meal plan
+  at the rate of the restaurant, in the folio and in the quote of a booking. A pack that defines `meal_plan_tax_rate(property, plan_code)`
+  says the rate by the plan's code (the Swiss pack of the hotel app: the lodging rate for the continental plan, the breakfast, and the
+  standard rate for a half or full board); every other pack keeps the rate of its restaurant, so no other country changes. Tests live in
+  the hotel app (`test_the_breakfast_is_taxed_with_the_night.py`). Remove the day upstream lets a pack tax a meal plan.
 - **The meals the restaurant's till put on the rooms, for the reception** (`frontend/src/components/MealsOnTheRooms.tsx`, one marked
   block in `screens/Billing.tsx`, two strings in `fr.json` and `de.json`): a card on « Guest bills » that lists, per stay in house, the
   meals a till of the same site invoiced and put on the bill (room, guest, each meal with its invoice, till and hour, and what the stay

@@ -98,6 +98,15 @@ def room_levy_for_night(pack, prop_doc, reservation, night_rate) -> dict | None:
 	return fn(prop_doc, reservation, night_rate) if fn else None
 
 
+# //// Neoffice — added accessor (no upstream equivalent). The tax rate of a meal plan, by the plan's code (EP, CP, MAP, AP): a pack
+# //// that defines `meal_plan_tax_rate(property, plan_code)` says it (Switzerland: the lodging rate for a breakfast, the standard rate for
+# //// a half or full board); every other pack keeps the rate of its restaurant, as Kamra always taxed a plan. To remove when upstream
+# //// lets a pack tax a meal plan.
+def meal_plan_tax_rate(pack, property: str | None, plan_code: str | None = None) -> float:
+	fn = getattr(pack, "meal_plan_tax_rate", None)
+	return float(fn(property, plan_code)) if fn else float(pack.fnb_tax_rate(property))
+
+
 def store_id_number(pack, id_type: str | None, value: str | None) -> str | None:
 	"""How a guest's ID number is kept. Core treats every ID as a plain card
 	and keeps what was typed; a pack can hold a national ID differently

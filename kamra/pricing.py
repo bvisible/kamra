@@ -1180,6 +1180,10 @@ def quote(
 	meal_total = Decimal(0)
 	if meal_plan:
 		mp = frappe.get_doc("Meal Plan", meal_plan)
+		# //// Neoffice — the quote taxes the plan at the rate the folio will (a country pack may say it by the plan's code): see
+		# //// kamra.folio._meal_plan_gst. A plan with no pack rate keeps the rate of the restaurant, as before.
+		from kamra.folio import _meal_plan_gst
+		FNB_GST = _meal_plan_gst(property, mp.code)
 		meal_total = billable_nights * (
 			adults * _dec(mp.price_per_adult)
 			+ children * _dec(mp.price_per_child)

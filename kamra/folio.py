@@ -38,6 +38,15 @@ def _fnb_gst(property):
 	return pack_for(property).fnb_tax_rate(property)
 
 
+# //// Neoffice — added helper (no upstream equivalent). A meal plan was taxed at the rate of the restaurant, in the folio and in the quote:
+# //// in Switzerland a night with its breakfast is taxed at the lodging rate and a half or full board at the standard one. A country pack
+# //// may say the rate of a plan by its code (`meal_plan_tax_rate(property, plan_code)`); a pack that does not keeps the rate of its
+# //// restaurant, so no other country changes. To remove when upstream lets a pack tax a meal plan.
+def _meal_plan_gst(property, plan_code):
+	from kamra.localization import meal_plan_tax_rate, pack_for
+	return meal_plan_tax_rate(pack_for(property), property, plan_code)
+
+
 def _recalculate(folio):
 	charges = tax = Decimal(0)
 	for c in folio.charges:
@@ -604,7 +613,8 @@ def post_room_night(reservation, date, folios=None) -> bool:
 				"qty": 1,
 				"rate": meal_amount,
 				"amount": meal_amount,
-				"gst_rate": _fnb_gst(reservation.property),
+				# //// Neoffice — the rate of the plan (breakfast, half board), not always the restaurant's: see _meal_plan_gst
+				"gst_rate": _meal_plan_gst(reservation.property, mp.code),
 				"auto_posted": 1,
 			})
 
